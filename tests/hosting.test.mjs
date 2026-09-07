@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import sitesWorker from '../dist/server/index.js';
 import { getBasePath } from '../lib/base-path.mjs';
 import {
   parseHeaders,
@@ -160,4 +161,81 @@ void test('build metadata is excluded from public files and the offline precache
   );
   const source = await readFile('components/game/math-game.tsx', 'utf8');
   assert.match(source, /updateViaCache: 'none'/);
+});
+
+void test('Sites adapter enforces the same headers, preserves conditional responses, and rejects missing files', async () => {
+  let fetches = 0;
+  const env = {
+    ASSETS: {
+      async fetch(request) {
+        fetches++;
+        const conditional = request.headers.has('if-none-match');
+        return new Response(
+          conditional || request.method === 'HEAD' ? null : 'static file',
+          {
+            status: conditional ? 304 : 200,
+            headers: {
+              'Content-Type': 'text/html',
+              'Cache-Control': 'public, max-age=0',
+              ETag: '"test"',
+            },
+          },
+        );
+      },
+    },
+  };
+  for (const path of [
+    '/',
+    '/sw.js',
+    '/manifest.webmanifest',
+    '/mathmagician.svg',
+  ]) {
+    const response = await sitesWorker.fetch(
+      new Request(`https://example.com${base}${path}`),
+      env,
+    );
+    assert.equal(response.status, 200);
+    for (const [key, value] of Object.entries(headers(path)))
+      assert.equal(response.headers.get(key), value, `${path}: ${key}`);
+    assert.equal(response.headers.get('etag'), '"test"');
+  }
+  const conditional = await sitesWorker.fetch(
+    new Request(`https://example.com${base}/`, {
+      headers: { 'If-None-Match': '"test"' },
+    }),
+    env,
+  );
+  assert.equal(conditional.status, 304);
+  assert.equal(conditional.headers.get('Cache-Control'), 'no-cache');
+  const count = fetches;
+  for (const path of [
+    '/unknown',
+    '/_headers',
+    '/hosting-policy.json',
+    '/_next/static/missing.js',
+  ]) {
+    const response = await sitesWorker.fetch(
+      new Request(`https://example.com${base}${path}`),
+      env,
+    );
+    assert.equal(response.status, 404);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    assert.equal(response.headers.get('X-Robots-Tag'), 'noindex');
+    assert.equal(
+      response.headers.get('Content-Security-Policy'),
+      headers('/')['Content-Security-Policy'],
+    );
+    assert.doesNotMatch(await response.text(), /<script\b/i);
+  }
+  const post = await sitesWorker.fetch(
+    new Request(`https://example.com${base}/`, { method: 'POST' }),
+    env,
+  );
+  assert.equal(post.status, 405);
+  assert.equal(post.headers.get('Allow'), 'GET, HEAD');
+  assert.equal(
+    fetches,
+    count,
+    'Missing routes and unsupported methods never hit the asset binding',
+  );
 });

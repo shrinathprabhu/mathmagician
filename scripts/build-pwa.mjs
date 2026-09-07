@@ -53,6 +53,7 @@ const hash = createHash('sha256');
 // Cached HTML carries response headers. A security-policy change must also
 // replace the offline cache, even if the application bytes are unchanged.
 hash.update(await readFile(join(output, '_headers')));
+hash.update(await readFile('scripts/sites-worker.template.mjs'));
 for (const file of files) hash.update(await readFile(file));
 const version = hash.digest('hex').slice(0, 16);
 const assets = [

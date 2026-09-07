@@ -44,7 +44,7 @@ The favicon and header share `public/mathmagician.svg`. The manifest’s 192/512
 
 The Sites preview is hosted at its own root. Use `npm run build:canonical` for **lowkey.tools/mathmagician**, then serve the contents of `dist/client/` at that prefix. The build sets script, stylesheet, icon, manifest, service-worker, and response-header paths automatically. `MATHMAGICIAN_BASE_PATH=/mathmagician npm start` previews that variant locally. Link metadata alone does not publish into the existing Lowkey Tools website, and a URL path does not require a separate DNS record.
 
-Security headers include a build-specific script CSP, HSTS, framing/MIME protection, and restricted browser permissions. HTTP caching distinguishes immutable hashed assets from files that need revalidation. `vercel.json` runs `npm run build:vercel` to generate native static routes, matching headers, and real 404 responses. See [security, caching, and Vercel deployment](docs/security.md) for canonical-path integration and verification.
+Security headers include a build-specific script CSP, HSTS, framing/MIME protection, and restricted browser permissions. HTTP caching distinguishes immutable hashed assets from files that need revalidation. A small Sites hosting adapter applies these rules to its static asset responses; gameplay and storage remain in the browser. `vercel.json` runs `npm run build:vercel` to generate native static routes, matching headers, and real 404 responses. See [security, caching, and Vercel deployment](docs/security.md) for canonical-path integration and verification.
 
 ## Search and answer engines
 
