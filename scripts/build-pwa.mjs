@@ -11,6 +11,7 @@ import {
 import { join, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 import { getBasePath } from '../lib/base-path.mjs';
+import { buildSecurity } from './build-security.mjs';
 
 const output = 'dist/client';
 const basePath = getBasePath();
@@ -28,12 +29,7 @@ if (basePath) {
   await rm(output, { recursive: true });
   await rename(staged, output);
 }
-// Host rules must match the actual deployment mount, including subpath builds.
-const headers = await readFile('public/_headers', 'utf8');
-await writeFile(
-  join(output, '_headers'),
-  headers.replace(/^\//gm, `${basePath}/`),
-);
+await buildSecurity(output, basePath);
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const nested = await Promise.all(
@@ -54,6 +50,9 @@ const files = (await walk(output))
   )
   .sort();
 const hash = createHash('sha256');
+// Cached HTML carries response headers. A security-policy change must also
+// replace the offline cache, even if the application bytes are unchanged.
+hash.update(await readFile(join(output, '_headers')));
 for (const file of files) hash.update(await readFile(file));
 const version = hash.digest('hex').slice(0, 16);
 const assets = [

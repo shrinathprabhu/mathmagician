@@ -217,7 +217,10 @@ export default function MathGame({ children }: { children: ReactNode }) {
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       // Explicit scope is safe with or without a trailing slash in the page URL.
       void navigator.serviceWorker
-        .register(appAsset('sw.js'), { scope: appAsset('') })
+        .register(appAsset('sw.js'), {
+          scope: appAsset(''),
+          updateViaCache: 'none',
+        })
         .then(() => navigator.serviceWorker.ready)
         .then(() => setOfflineReady(true))
         .catch(() => {
