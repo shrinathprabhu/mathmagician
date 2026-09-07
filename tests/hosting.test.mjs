@@ -164,59 +164,48 @@ void test('build metadata is excluded from public files and the offline precache
 });
 
 void test('Sites adapter enforces the same headers, preserves conditional responses, and rejects missing files', async () => {
-  let fetches = 0;
-  const env = {
-    ASSETS: {
-      async fetch(request) {
-        fetches++;
-        const conditional = request.headers.has('if-none-match');
-        return new Response(
-          conditional || request.method === 'HEAD' ? null : 'static file',
-          {
-            status: conditional ? 304 : 200,
-            headers: {
-              'Content-Type': 'text/html',
-              'Cache-Control': 'public, max-age=0',
-              ETag: '"test"',
-            },
-          },
-        );
-      },
-    },
-  };
-  for (const path of [
-    '/',
-    '/sw.js',
-    '/manifest.webmanifest',
-    '/mathmagician.svg',
-  ]) {
-    const response = await sitesWorker.fetch(
+  let etag;
+  const sw = await readFile(`${output}/sw.js`, 'utf8');
+  const precache = JSON.parse(sw.match(/const ASSETS = (\[[^\n]+\]);/)[1]);
+  for (const path of [...precache.map((file) => file.slice(1)), '/sw.js']) {
+    const response = sitesWorker.fetch(
       new Request(`https://example.com${base}${path}`),
-      env,
     );
-    assert.equal(response.status, 200);
+    assert.equal(response.status, path === '/404.html' ? 404 : 200);
     for (const [key, value] of Object.entries(headers(path)))
       assert.equal(response.headers.get(key), value, `${path}: ${key}`);
-    assert.equal(response.headers.get('etag'), '"test"');
+    const bytes = await readFile(
+      `${output}${path === '/' ? '/index.html' : path}`,
+    );
+    assert.deepEqual(
+      Buffer.from(await response.arrayBuffer()),
+      bytes,
+      `Exact static bytes: ${path}`,
+    );
+    if (path === '/') etag = response.headers.get('etag');
   }
-  const conditional = await sitesWorker.fetch(
+  assert.ok(etag);
+  const conditional = sitesWorker.fetch(
     new Request(`https://example.com${base}/`, {
-      headers: { 'If-None-Match': '"test"' },
+      headers: { 'If-None-Match': `"unrelated", W/${etag}` },
     }),
-    env,
   );
   assert.equal(conditional.status, 304);
   assert.equal(conditional.headers.get('Cache-Control'), 'no-cache');
-  const count = fetches;
+  const head = sitesWorker.fetch(
+    new Request(`https://example.com${base}/`, { method: 'HEAD' }),
+  );
+  assert.equal(head.status, 200);
+  assert.equal(await head.text(), '');
+  assert.equal(head.headers.get('etag'), etag);
   for (const path of [
     '/unknown',
     '/_headers',
     '/hosting-policy.json',
     '/_next/static/missing.js',
   ]) {
-    const response = await sitesWorker.fetch(
+    const response = sitesWorker.fetch(
       new Request(`https://example.com${base}${path}`),
-      env,
     );
     assert.equal(response.status, 404);
     assert.equal(response.headers.get('Cache-Control'), 'no-store');
@@ -227,15 +216,16 @@ void test('Sites adapter enforces the same headers, preserves conditional respon
     );
     assert.doesNotMatch(await response.text(), /<script\b/i);
   }
-  const post = await sitesWorker.fetch(
+  const post = sitesWorker.fetch(
     new Request(`https://example.com${base}/`, { method: 'POST' }),
-    env,
   );
   assert.equal(post.status, 405);
   assert.equal(post.headers.get('Allow'), 'GET, HEAD');
-  assert.equal(
-    fetches,
-    count,
-    'Missing routes and unsupported methods never hit the asset binding',
+  await assert.rejects(access('work/sites-deploy/dist/client'), {
+    code: 'ENOENT',
+  });
+  assert.deepEqual(
+    await readFile('work/sites-deploy/dist/server/index.js'),
+    await readFile('dist/server/index.js'),
   );
 });

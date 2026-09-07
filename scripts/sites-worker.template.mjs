@@ -2,8 +2,17 @@
 /* oxlint-disable no-undef */
 const BASE = __BASE__;
 const RULES = __RULES__;
-const FILES = new Set(__FILES__);
-const NOT_FOUND = __NOT_FOUND__;
+const FILES = __FILES__;
+const decoded = new Map();
+
+function body(path) {
+  if (!decoded.has(path))
+    decoded.set(
+      path,
+      Uint8Array.from(atob(FILES[path].body), (char) => char.charCodeAt(0)),
+    );
+  return decoded.get(path);
+}
 
 function responseHeaders(pathname) {
   const headers = new Headers();
@@ -16,7 +25,7 @@ function responseHeaders(pathname) {
 }
 
 const worker = {
-  async fetch(request, env) {
+  fetch(request) {
     const url = new URL(request.url);
     const headers = responseHeaders(url.pathname);
     if (!['GET', 'HEAD'].includes(request.method)) {
@@ -31,24 +40,33 @@ const worker = {
     const path = home ? '/index.html' : url.pathname.slice(BASE.length);
     const inScope =
       !BASE || url.pathname === BASE || url.pathname.startsWith(`${BASE}/`);
-    if (!inScope || !FILES.has(path) || path === '/404.html') {
+    if (!inScope || !Object.hasOwn(FILES, path) || path === '/404.html') {
       headers.set('Cache-Control', 'no-store');
       headers.set('X-Robots-Tag', 'noindex');
       headers.set('Content-Type', 'text/html; charset=utf-8');
-      return new Response(request.method === 'HEAD' ? null : NOT_FOUND, {
-        status: 404,
-        headers,
-      });
+      return new Response(
+        request.method === 'HEAD' ? null : body('/404.html'),
+        {
+          status: 404,
+          headers,
+        },
+      );
     }
-    url.pathname = home ? '/' : path;
-    const asset = await env.ASSETS.fetch(new Request(url, request));
-    const result = new Response(asset.body, asset);
-    for (const [key, value] of headers) result.headers.set(key, value);
-    if (asset.status >= 400) {
-      result.headers.set('Cache-Control', 'no-store');
-      result.headers.set('X-Robots-Tag', 'noindex');
-    }
-    return result;
+    const file = FILES[path];
+    if (!headers.has('Content-Type')) headers.set('Content-Type', file.type);
+    if (!headers.has('Cache-Control')) headers.set('Cache-Control', 'no-cache');
+    headers.set('ETag', file.etag);
+    const tags = request.headers.get('If-None-Match')?.split(',') || [];
+    if (
+      tags.some(
+        (tag) =>
+          tag.trim() === '*' || tag.trim().replace(/^W\//, '') === file.etag,
+      )
+    )
+      return new Response(null, { status: 304, headers });
+    return new Response(request.method === 'HEAD' ? null : body(path), {
+      headers,
+    });
   },
 };
 
