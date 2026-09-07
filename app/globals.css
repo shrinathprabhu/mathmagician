@@ -133,6 +133,11 @@ button:active:not(:disabled) {
   color: #231338;
   margin-right: 11px;
 }
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .brand-dot {
   color: var(--primary);
 }

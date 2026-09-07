@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   useCallback,
   useEffect,
@@ -15,7 +16,6 @@ import {
   Keyboard,
   Sparkles,
   Trophy,
-  WandSparkles,
   Zap,
   CornerDownLeft,
   RotateCcw,
@@ -438,7 +438,14 @@ export default function MathGame({ children }: { children: ReactNode }) {
       <header className="site-header">
         <Link className="brand" href="/" aria-label="Mathmagician home">
           <span className="brand-mark">
-            <WandSparkles size={23} />
+            <Image
+              src={appAsset('mathmagician.svg')}
+              width={38}
+              height={38}
+              alt=""
+              unoptimized
+              loading="eager"
+            />
           </span>
           mathmagician<span className="brand-dot">.</span>
         </Link>

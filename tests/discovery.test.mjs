@@ -76,7 +76,7 @@ void test('crawler files, Markdown discovery, and asset paths support the select
   assert.ok(html.includes(`href="${SITE.url}/llms.txt"`));
   assert.ok(html.includes(`href="${SITE.url}/index.md"`));
   assert.ok(html.includes(`href="${base}/manifest.webmanifest"`));
-  assert.ok(html.includes(`href="${base}/icon.svg"`));
+  assert.ok(html.includes(`href="${base}/mathmagician.svg"`));
   assert.ok(
     headers.includes(
       `${base}/_next/static/*\n  Cache-Control: public, max-age=31536000, immutable`,

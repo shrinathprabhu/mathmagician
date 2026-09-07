@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   },
   manifest: appAsset('manifest.webmanifest'),
   icons: {
-    icon: appAsset('icon.svg'),
-    apple: appAsset('icons/apple-touch-icon.png'),
+    icon: appAsset('mathmagician.svg'),
+    apple: appAsset('icons/mathmagician-apple-touch.png'),
   },
   appleWebApp: {
     capable: true,
