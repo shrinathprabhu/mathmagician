@@ -1,44 +1,51 @@
 # Mathmagician
 
-A frontend-only, installable mental math sprint app. All game state and personal records stay in the browser. No API, account, database, analytics, or runtime server is required.
+A frontend-only, installable mental math sprint app. Game state and personal records stay in the browser. No API, account, database, analytics, or runtime server is required.
 
 ## Run
 
-Node 22.13+ (Node 22.18+ or 24+ recommended for built-in TypeScript test support).
+Use Node 22.18+ or 24+ for built-in TypeScript test support.
 
 ```sh
 npm ci
 npm run dev
-npm test
+npm run lint
 npm run typecheck
 npm run build
+npm test
 npm start
 ```
 
-`npm run build` exports static files to `dist/client/` and generates a versioned service worker with a complete asset precache. Deploy the **contents of dist/client/** to an HTTPS static host. `npm start` serves that output locally on port 4173.
+The build exports static files to `dist/client/` and generates a versioned service worker with a full asset precache. Deploy the contents of that directory to an HTTPS static host. `npm start` serves the output locally on port 4173.
 
 ## Gameplay
 
-- Five modes: 2 operands, 3 operands with one repeated operator, 3 with mixed operators, 4 with one repeated operator, and 4 with mixed operators.
-- Default 30-second round; only 10, 20, 30, 60, and 120 seconds are supported.
-- Three-second preparation countdown, followed by a fixed deadline. Backgrounding the app does not pause or extend the round. Answers at or after the deadline do not count.
-- Operands are integers from 1 through 20. Operators are +, −, ×, ÷. Division steps are exact, so answers are integers; negative and zero answers are supported.
-- Multiplication and division are evaluated left to right before addition and subtraction, also left to right. No `eval` or dynamic code execution.
-- Same-operator questions choose an operator independently for each question and repeat it. Mixed questions guarantee at least two distinct operators.
-- Correct answers earn one point. Wrong answers and skips advance the question without a point and break the streak. Accuracy includes skips. Reward text uses correct answers per minute; it does not claim competitive rankings across modes.
-- Local storage keeps the last 50 results, best scores per mode/duration, and settings. Clearing browser data resets them. Storage failures do not prevent playing.
-- Native Web Share, copyable text, X and WhatsApp share links. Social posting remains a user action.
+Four difficulty modes set operand ranges: Kids 0–20, Adult 0–50, Legendary 0–100, and God 0–1,000. Operands themselves are nonnegative; Adult, Legendary, and God allow negative answers. Kids also excludes negative intermediate calculations. Division never has a zero divisor and always produces an integer.
 
-## PWA and hosting
+Each difficulty supports the same five expression challenges: two operands, three with a repeated operator, three with mixed operators, four with a repeated operator, and four with mixed operators. The repeated operator is randomly selected per question; mixed challenges guarantee at least two different operators. Normal multiplication/division and addition/subtraction precedence applies, left to right within each level.
 
-The manifest includes 192/512 icons, a maskable icon, and an Apple touch icon. No third-party fonts or runtime CDN assets are needed. Open once online to complete precaching; then the full game can load offline. Updates activate after old tabs close, keeping the HTML and hashed assets on the same version.
+Rounds default to 30 seconds; only 10, 20, 30, 60, and 120 seconds are supported. The three-second countdown is excluded from the game clock. Backgrounding does not pause or extend the round; submissions at the deadline do not count.
 
-Brand/share URL: **https://mathmagician.lowkey.tools**. Canonical: **https://lowkey.tools/mathmagician**. These metadata settings do not provision DNS or publish a page at the canonical URL. Connecting the domain requires its DNS owner. Serve `sw.js` without long-lived caching. The `_headers` file provides Cloudflare Pages-compatible defaults; configure equivalent headers on other hosts.
+A numeric input replaces the custom number pad. Letters, decimal fractions, exponents, and malformed signs are rejected. Signed integers are accepted outside Kids mode, with a single ± control for mobile keyboards that lack a minus key. The field supports every possible generated result, including the 13-digit maximum in God mode.
 
-If deploying the app itself under `/mathmagician/`, configure the framework's `basePath` before rebuilding so bundle URLs use that prefix, and serve the directory with its trailing-slash URL. PWA asset URLs are relative to the app's scope.
+Each correct expression earns one point. Wrong answers and skips earn none, advance the question, break the streak, and count toward accuracy. Live question timing, per-attempt seconds, and average time per correct answer show pace. Prominent replay and change-challenge controls sit directly below results.
 
-The optional feature-detected WebMCP surface offers `configure_math_round` and `read_math_progress`. It exposes the same settings and local records as the UI and does not submit answers or post scores. Live WebMCP validation requires a supporting browser; it is not required to play.
+A score-to-beat target scales with difficulty, challenge, and duration. Six message bands compare the result with that target. Targets are clearly labeled estimates, not population averages. See [benchmark rationale and research](docs/benchmarks.md).
 
-## Validation
+The last 50 results and best scores are stored separately for each difficulty/challenge/duration under `mathmagician.v2`. Original `v1` data remains untouched; earlier rounds appear in an archive using their original rules. Unavailable browser storage does not prevent gameplay.
 
-The test suite checks 25,000 seeded generated questions, independent operator precedence, all deadlines, rejection of late/invalid answers, scoring and sharing, local-record validation, and actual generated service-worker install/offline/update behavior. Production artifact tests run after `npm run build` and check its HTML, PWA manifest, and offline cache. Browser interaction/install testing is a separate manual check.
+## Sharing and credits
+
+All app, social-share, Open Graph, canonical, footer, and sitemap references use **https://lowkey.tools/mathmagician**. Native Web Share, clipboard, X, and WhatsApp remain user-triggered actions. The footer matches [Lowkey Tools](https://lowkey.tools): links to [OwlEye Analytics](https://owleye.dev) and [Shrinath](https://shrinath.me).
+
+## PWA and deployment
+
+The manifest contains 192/512 icons, a maskable icon, and an Apple touch icon. No runtime third-party fonts or CDN assets are required. Open once online to precache; then the game works offline. Updates activate after old tabs close so HTML and its hashed assets stay on one version.
+
+The Sites preview is hosted at its own root. For deployment at **lowkey.tools/mathmagician**, set `basePath: '/mathmagician'` in `next.config.ts` before rebuilding, serve the app under that prefix, and redirect the bare path to `/mathmagician/` so relative PWA URLs resolve within its scope. Adjust static-host `_headers` paths to the prefix. Link metadata alone does not publish into the existing Lowkey Tools website, and a URL path does not require a separate DNS record.
+
+The optional WebMCP surface exposes the same settings and local record state via `configure_math_round` (mode, level, duration) and `read_math_progress`. Live contract validation requires a supporting browser and is not needed for gameplay.
+
+## Checks
+
+Tests cover 100,000 seeded questions across all difficulty/challenge combinations, zero and negative handling, division safety, 100 timed configurations, per-question timing, numeric-only input and large answers, comparison bands, separate personal bests, original-rule archives, metadata, and generated-service-worker offline/cache behavior. Artifact tests run after a production build. Lint targets authored application code; vendored starter components remain unchanged. Browser interaction and on-device PWA installation are separate manual checks.

@@ -3,7 +3,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Mathmagician — Fast math. Sharp mind.',
   description:
-    'Race the clock in five mental math modes. Play 10-second to 2-minute rounds, beat your personal best, and share your Mathmagician score. Works offline.',
+    'Race the clock in four mental math difficulty modes. Play 10-second to 2-minute rounds, beat your personal best, and share your Mathmagician score. Works offline.',
   applicationName: 'Mathmagician',
   alternates: { canonical: 'https://lowkey.tools/mathmagician' },
   manifest: './manifest.webmanifest',
@@ -15,8 +15,9 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Mathmagician — Fast math. Sharp mind.',
-    description: 'Small numbers. A ticking clock. How many can you solve?',
-    url: 'https://mathmagician.lowkey.tools',
+    description:
+      'Four difficulty modes. A ticking clock. How many can you solve?',
+    url: 'https://lowkey.tools/mathmagician',
     type: 'website',
     siteName: 'Mathmagician',
   },

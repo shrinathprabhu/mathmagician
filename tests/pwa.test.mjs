@@ -26,6 +26,16 @@ void test(
       html,
       /Untitled site|Your site is taking shape|fonts.googleapis/,
     );
+    for (const name of [
+      'Kids mode',
+      'Adult mode',
+      'Legendary mode',
+      'God mode',
+    ])
+      assert.ok(html.includes(name));
+    assert.match(html, /href="https:\/\/owleye.dev"/);
+    assert.match(html, /href="https:\/\/shrinath.me"/);
+    assert.ok(!html.includes('aria-label="Number pad"'));
     const manifest = JSON.parse(
       await readFile(`${output}/manifest.webmanifest`, 'utf8'),
     );

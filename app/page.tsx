@@ -11,7 +11,6 @@ import {
   Trophy,
   WandSparkles,
   Zap,
-  Delete,
   CornerDownLeft,
   RotateCcw,
   Share2,
@@ -36,6 +35,13 @@ import {
 import { Progress } from '@/components/ui/progress';
 import {
   MODES,
+  LEVELS,
+  getLevel,
+  targetScore,
+  comparisonText,
+  isAnswerInput,
+  BENCHMARK_SOURCE,
+  type LevelId,
   DURATIONS,
   getMode,
   startRound,
@@ -46,6 +52,8 @@ import {
   reward,
   shareText,
   parseResults,
+  parseLegacyResults,
+  type LegacyResult,
   bestResults,
   recordKey,
   validConfig,
@@ -56,8 +64,8 @@ import {
   type Duration,
 } from '@/lib/game';
 
-const STORAGE = 'mathmagician.v1';
-const DEFAULT_CONFIG: Config = { mode: 'quick', duration: 30 };
+const STORAGE = 'mathmagician.v2';
+const DEFAULT_CONFIG: Config = { mode: 'quick', level: 'kids', duration: 30 };
 type InstallPrompt = Event & {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: string }>;
@@ -82,11 +90,13 @@ export default function Home() {
   const [now, setNow] = useState(0);
   const [answer, setAnswer] = useState('');
   const answerRef = useRef('');
+  const inputRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState<{
     text: string;
     correct: boolean;
   } | null>(null);
   const [history, setHistory] = useState<Result[]>([]);
+  const [legacyHistory, setLegacyHistory] = useState<LegacyResult[]>([]);
   const [bests, setBests] = useState<Result[]>([]);
   const [result, setResult] = useState<Result | null>(null);
   const [newBest, setNewBest] = useState(false);
@@ -98,9 +108,9 @@ export default function Home() {
     null,
   );
   const [installed, setInstalled] = useState(false);
-  const [dialog, setDialog] = useState<'help' | 'history' | 'install' | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<
+    'help' | 'history' | 'install' | 'benchmark' | null
+  >(null);
   const arenaRef = useRef<HTMLElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
   const configRef = useRef(config);
@@ -109,6 +119,8 @@ export default function Home() {
   const resultSaved = useRef(false);
   const isActive = !!round && round.phase !== 'result';
   const mode = getMode(config.mode);
+  const level = getLevel(config.level);
+  const target = targetScore(config);
   const best = bests.find((r) => recordKey(r) === recordKey(config));
 
   // Use monotonic elapsed time, with wall time covering device sleep. Background
@@ -158,6 +170,9 @@ export default function Home() {
       if (cancelled) return;
       try {
         const h = parseResults(localStorage.getItem(`${STORAGE}.history`));
+        setLegacyHistory(
+          parseLegacyResults(localStorage.getItem('mathmagician.v1.history')),
+        );
         const b = bestResults(
           parseResults(localStorage.getItem(`${STORAGE}.bests`)),
         );
@@ -257,32 +272,15 @@ export default function Home() {
         setFeedback({
           correct: last.correct,
           text: last.correct
-            ? `${last.question.expression} = ${last.question.answer} · Nice!`
-            : `${skip ? 'Skipped' : 'Not quite'}: ${last.question.expression} = ${last.question.answer}`,
+            ? `${last.question.expression} = ${last.question.answer} · ${(last.elapsedMs / 1000).toFixed(2)}s · Nice!`
+            : `${skip ? 'Skipped' : 'Not quite'}: ${last.question.expression} = ${last.question.answer} · ${(last.elapsedMs / 1000).toFixed(2)}s`,
         });
         updateAnswer('');
+        inputRef.current?.focus({ preventScroll: true });
       }
     },
     [commit, gameNow, updateAnswer],
   );
-  const keyInput = useCallback(
-    (key: string) => {
-      if (roundRef.current?.phase !== 'playing') return;
-      if (key === 'Enter') {
-        submit();
-        return;
-      }
-      const old = answerRef.current;
-      if (key === 'Backspace') updateAnswer(old.slice(0, -1));
-      else if (key === 'Escape' || key === 'Clear') updateAnswer('');
-      else if (key === '-')
-        updateAnswer(old.startsWith('-') ? old.slice(1) : `-${old}`);
-      else if (/^\d$/.test(key) && old.replace('-', '').length < 7)
-        updateAnswer(`${old}${key}`);
-    },
-    [submit, updateAnswer],
-  );
-
   useEffect(() => {
     if (!isActive) return;
     const tick = () => {
@@ -304,20 +302,9 @@ export default function Home() {
     };
   }, [isActive, commit, gameNow]);
   useEffect(() => {
-    if (!isActive) return;
-    const keydown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || dialog) return;
-      if (
-        /^\d$/.test(event.key) ||
-        ['Enter', 'Backspace', 'Escape', '-'].includes(event.key)
-      ) {
-        event.preventDefault();
-        if (!event.repeat || event.key === 'Backspace') keyInput(event.key);
-      }
-    };
-    window.addEventListener('keydown', keydown);
-    return () => window.removeEventListener('keydown', keydown);
-  }, [isActive, keyInput, dialog]);
+    if (round?.phase === 'playing')
+      inputRef.current?.focus({ preventScroll: true });
+  }, [round?.phase]);
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(''), 5000);
@@ -340,9 +327,10 @@ export default function Home() {
           type: 'object',
           properties: {
             mode: { type: 'string', enum: MODES.map((m) => m.id) },
+            level: { type: 'string', enum: LEVELS.map((l) => l.id) },
             duration: { type: 'integer', enum: [...DURATIONS] },
           },
-          required: ['mode', 'duration'],
+          required: ['mode', 'level', 'duration'],
           additionalProperties: false,
         },
         annotations: { readOnlyHint: false },
@@ -438,7 +426,7 @@ export default function Home() {
   const roundAccuracy = round?.attempts.length
     ? Math.round((round.correct / round.attempts.length) * 100)
     : 0;
-  const earned = result ? reward(result.correct, result.duration) : null;
+  const earned = result ? reward(result.correct, result.target) : null;
 
   return (
     <div
@@ -499,6 +487,47 @@ export default function Home() {
             </span>
           </button>
         </div>
+        <section
+          className={`level-panel ${isActive ? 'setup-locked' : ''}`}
+          aria-labelledby="level-label"
+        >
+          <div className="section-label">
+            <span>01</span>
+            <h2 id="level-label">Choose your mode</h2>
+          </div>
+          <RadioGroup
+            value={config.level}
+            onValueChange={(value) =>
+              configure({ ...config, level: value as LevelId })
+            }
+            disabled={isActive}
+            aria-label="Difficulty mode"
+            className="level-list"
+          >
+            {LEVELS.map((l) => (
+              <label
+                key={l.id}
+                htmlFor={`level-${l.id}`}
+                className={`level-card ${l.id === config.level ? 'selected' : ''}`}
+              >
+                <span>
+                  <strong>{l.name} mode</strong>
+                  <small>
+                    0–{l.max.toLocaleString('en-US')} ·{' '}
+                    {l.negatives
+                      ? 'Negative answers too'
+                      : 'No negative answers'}
+                  </small>
+                </span>
+                <RadioGroupItem
+                  id={`level-${l.id}`}
+                  value={l.id}
+                  aria-label={`${l.name} mode`}
+                />
+              </label>
+            ))}
+          </RadioGroup>
+        </section>
         <div className="workspace">
           <aside
             id="top-of-settings"
@@ -506,14 +535,14 @@ export default function Home() {
             className={`setup-panel ${isActive ? 'setup-locked' : ''}`}
           >
             <div className="section-label">
-              <span>01</span>
-              <h2>Choose your mode</h2>
+              <span>02</span>
+              <h2>Choose your challenge</h2>
             </div>
             <RadioGroup
               value={config.mode}
               onValueChange={(v) => configure({ ...config, mode: v as ModeId })}
               disabled={isActive}
-              aria-label="Game mode"
+              aria-label="Expression challenge"
               className="mode-list"
             >
               {MODES.map((m, i) => (
@@ -533,7 +562,7 @@ export default function Home() {
               ))}
             </RadioGroup>
             <div className="section-label duration-label">
-              <span>02</span>
+              <span>03</span>
               <h2>Set the clock</h2>
               <Clock3 size={16} />
             </div>
@@ -587,7 +616,9 @@ export default function Home() {
                     ? 'YOUR MOMENT OF MAGIC'
                     : 'THE PLAYGROUND'}
               </span>
-              <span className="mode-badge">{mode.name}</span>
+              <span className="mode-badge">
+                {level.name} · {mode.name}
+              </span>
             </div>
             {!round && (
               <div className="ready-content">
@@ -596,6 +627,19 @@ export default function Home() {
                 </div>
                 <h2>A little focus. A lot of possibility.</h2>
                 <p>Your next personal best starts here.</p>
+                <button
+                  className="target-card"
+                  onClick={() => setDialog('benchmark')}
+                >
+                  <Target size={18} />
+                  <span>
+                    <strong>Score to beat: {target}</strong>
+                    <small>
+                      Correct answers in {config.duration}s · estimated target
+                    </small>
+                  </span>
+                  <CircleHelp size={14} />
+                </button>
                 <div
                   className={`equation preview-equation operands-${mode.operands}`}
                 >
@@ -624,7 +668,8 @@ export default function Home() {
                 <h2>You’ve got this.</h2>
                 <p>Type your answer. Press Enter. Keep going.</p>
                 <span className="countdown-settings">
-                  {mode.name} <span>·</span> {config.duration} seconds
+                  {level.name} · {mode.name} <span>·</span> {config.duration}{' '}
+                  seconds
                 </span>
               </div>
             )}
@@ -677,7 +722,9 @@ export default function Home() {
                 />
                 <div className="question-label">
                   QUESTION {round.attempts.length + 1}
-                  <span>{roundAccuracy}% accuracy</span>
+                  <span>
+                    {roundAccuracy}% accuracy · target {target}
+                  </span>
                 </div>
                 <div
                   className={`equation live-equation operands-${mode.operands}`}
@@ -686,6 +733,16 @@ export default function Home() {
                 >
                   {round.question.expression}
                   <span> = ?</span>
+                </div>
+                <div className="question-time">
+                  <Clock3 size={14} />
+                  <span>This question</span>
+                  <strong>
+                    {(
+                      Math.max(0, now - round.questionStartedAt) / 1000
+                    ).toFixed(1)}
+                    s
+                  </strong>
                 </div>
                 <form
                   onSubmit={(e) => {
@@ -699,27 +756,57 @@ export default function Home() {
                   </label>
                   <input
                     id="answer"
+                    ref={inputRef}
+                    type="text"
+                    enterKeyHint="done"
+                    maxLength={14}
                     autoComplete="off"
                     spellCheck={false}
-                    inputMode="none"
+                    inputMode="numeric"
                     value={answer}
                     onChange={(e) => {
-                      if (/^-?\d{0,7}$/.test(e.target.value))
+                      if (isAnswerInput(e.target.value, config.level))
                         updateAnswer(e.target.value);
                     }}
                     onPaste={(e) => {
                       e.preventDefault();
                       const value = e.clipboardData.getData('text').trim();
-                      if (/^-?\d{1,7}$/.test(value)) updateAnswer(value);
+                      if (isAnswerInput(value, config.level, true))
+                        updateAnswer(value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        updateAnswer('');
+                      }
+                      if (e.key === 'Enter' && e.repeat) e.preventDefault();
                     }}
                     placeholder="Your answer"
                     aria-describedby="answer-hint"
                   />
+                  {level.negatives && (
+                    <button
+                      type="button"
+                      className="sign-toggle"
+                      aria-label="Toggle negative answer"
+                      onPointerDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        updateAnswer(
+                          answer.startsWith('-')
+                            ? answer.slice(1)
+                            : `-${answer}`,
+                        );
+                        inputRef.current?.focus({ preventScroll: true });
+                      }}
+                    >
+                      ±
+                    </button>
+                  )}
                   <button
                     type="submit"
                     className="answer-submit"
                     aria-label="Submit answer"
-                    disabled={!/^-?\d+$/.test(answer)}
+                    disabled={!isAnswerInput(answer, config.level, true)}
                   >
                     <CornerDownLeft size={21} />
                   </button>
@@ -734,48 +821,11 @@ export default function Home() {
                       {feedback.correct ? <Check size={14} /> : <span>↳</span>}
                       {feedback.text}
                     </>
+                  ) : level.negatives ? (
+                    'Whole numbers only. Use ± for a negative answer.'
                   ) : (
-                    'Whole-number answers. Negative numbers are fair game.'
+                    'Whole numbers only. No negative answers in Kids mode.'
                   )}
-                </div>
-                <div className="number-pad" aria-label="Number pad">
-                  {[
-                    '7',
-                    '8',
-                    '9',
-                    '4',
-                    '5',
-                    '6',
-                    '1',
-                    '2',
-                    '3',
-                    '-',
-                    '0',
-                    'Backspace',
-                  ].map((key) => (
-                    <button
-                      key={key}
-                      className={
-                        key === '-' || key === 'Backspace' ? 'utility-key' : ''
-                      }
-                      onClick={() => keyInput(key)}
-                      aria-label={
-                        key === '-'
-                          ? 'Toggle negative sign'
-                          : key === 'Backspace'
-                            ? 'Delete last digit'
-                            : key
-                      }
-                    >
-                      {key === 'Backspace' ? (
-                        <Delete size={20} />
-                      ) : key === '-' ? (
-                        '±'
-                      ) : (
-                        key
-                      )}
-                    </button>
-                  ))}
                 </div>
                 <div className="game-actions">
                   <button className="quiet-button" onClick={() => submit(true)}>
@@ -784,7 +834,10 @@ export default function Home() {
                   <span>Enter ↵ to submit</span>
                   <button
                     className="quiet-button"
-                    onClick={() => updateAnswer('')}
+                    onClick={() => {
+                      updateAnswer('');
+                      inputRef.current?.focus({ preventScroll: true });
+                    }}
                     aria-label="Clear answer"
                   >
                     Clear <X size={13} />
@@ -817,6 +870,12 @@ export default function Home() {
                     in <b>{result.duration} seconds</b>
                   </span>
                 </div>
+                <div className="target-comparison">
+                  <span>{comparisonText(result.correct, result.target)}</span>
+                  <button onClick={() => setDialog('benchmark')}>
+                    Target: {result.target} <CircleHelp size={13} />
+                  </button>
+                </div>
                 <div className="result-stats">
                   <div>
                     <Target size={15} />
@@ -829,9 +888,13 @@ export default function Home() {
                     <span>best streak</span>
                   </div>
                   <div>
-                    <X size={15} />
-                    <strong>{result.wrong + result.skipped}</strong>
-                    <span>wrong / skipped</span>
+                    <Clock3 size={15} />
+                    <strong>
+                      {result.averageSolveMs === null
+                        ? '—'
+                        : `${(result.averageSolveMs / 1000).toFixed(2)}s`}
+                    </strong>
+                    <span>avg. correct answer</span>
                   </div>
                 </div>
                 <div className="result-actions">
@@ -842,6 +905,21 @@ export default function Home() {
                     <Share2 size={16} /> Share score
                   </button>
                 </div>
+                <button
+                  className="secondary-button change-challenge-button"
+                  onClick={() => {
+                    configure(config);
+                    requestAnimationFrame(() => {
+                      document.getElementById('top-of-settings')?.focus();
+                      document.getElementById('level-label')?.scrollIntoView({
+                        block: 'start',
+                        behavior: 'instant',
+                      });
+                    });
+                  }}
+                >
+                  Change challenge <ArrowRight size={17} />
+                </button>
                 <div className="share-links">
                   <button onClick={copyResult}>
                     {copied ? <CheckCheck size={14} /> : <Copy size={14} />}{' '}
@@ -872,7 +950,7 @@ export default function Home() {
                     value={shareText(result)}
                     onFocus={(e) => e.target.select()}
                   />
-                  {round && round.attempts.length > 0 && (
+                  {round && (
                     <ol className="round-review">
                       {round.attempts.map((attempt, i) => (
                         <li
@@ -892,28 +970,40 @@ export default function Home() {
                               : attempt.answer === null
                                 ? 'Skipped'
                                 : `You: ${attempt.answer}`}
+                            <span className="attempt-time">
+                              {(attempt.elapsedMs / 1000).toFixed(2)}s
+                            </span>
                           </small>
                         </li>
                       ))}
+                      <li className="review-timeout">
+                        <span>
+                          {round.question.expression} ={' '}
+                          <b>{round.question.answer}</b>
+                        </span>
+                        <small>
+                          Time up
+                          <span className="attempt-time">
+                            {(
+                              Math.max(
+                                0,
+                                round.endsAt - round.questionStartedAt,
+                              ) / 1000
+                            ).toFixed(2)}
+                            s
+                          </span>
+                        </small>
+                      </li>
                     </ol>
                   )}
                 </details>
-                <button
-                  className="change-settings"
-                  onClick={() => {
-                    configure(config);
-                    document.getElementById('top-of-settings')?.focus();
-                  }}
-                >
-                  Change challenge <ArrowRight size={13} />
-                </button>
               </div>
             )}
             {(!isActive || round?.phase === 'countdown') && (
               <div className="arena-footer">
                 <span>
                   <Keyboard size={17} />
-                  Keyboard or number pad
+                  Type your answer. Press Enter.
                 </span>
                 <span>
                   <Check size={15} />
@@ -925,9 +1015,16 @@ export default function Home() {
         </div>
         <div className="rules-strip">
           <div>
-            <span className="rule-symbol">1–20</span>
+            <span className="rule-symbol">
+              0–{level.max.toLocaleString('en-US')}
+            </span>
             <p>
-              Small numbers<span>Every operand, every round</span>
+              {level.name} mode
+              <span>
+                {level.negatives
+                  ? 'Negative answers included'
+                  : 'No negative answers'}
+              </span>
             </p>
           </div>
           <div>
@@ -945,9 +1042,25 @@ export default function Home() {
         </div>
       </main>
       <footer className="site-footer">
-        <span>
-          Made for the{' '}
-          <span className="footer-highlight">“one more round”</span> in you.
+        <span className="creator-credit">
+          From the makers of{' '}
+          <a
+            href="https://owleye.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            OwlEye Analytics
+          </a>
+          .<br />
+          Built by{' '}
+          <a
+            href="https://shrinath.me"
+            target="_blank"
+            rel="me author noopener noreferrer"
+          >
+            Shrinath
+          </a>
+          .
         </span>
         <div className="footer-actions">
           <button onClick={() => setDialog('history')} disabled={isActive}>
@@ -964,7 +1077,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <span className="footer-star">✦</span> mathmagician.lowkey.tools
+                <span className="footer-star">✦</span> lowkey.tools/mathmagician
               </>
             )}
           </span>
@@ -976,6 +1089,48 @@ export default function Home() {
           sprint <ArrowRight size={17} />
         </button>
       )}
+      <Dialog
+        open={dialog === 'benchmark'}
+        onOpenChange={(open) => setDialog(open ? 'benchmark' : null)}
+      >
+        <DialogContent className="info-dialog">
+          <DialogTitle>A target, not a test of you</DialogTitle>
+          <DialogDescription>
+            A manageable score to aim for in this challenge.
+          </DialogDescription>
+          <div className="benchmark-number">
+            <Target size={24} />
+            <strong>{target}</strong>
+            <span>
+              correct answers in {config.duration}s<br />
+              {level.name} · {mode.name}
+            </span>
+          </div>
+          <p className="dialog-note">
+            These are estimated training targets, not measured player averages
+            or age norms. They allow more time for bigger numbers, longer
+            expressions, and mixed operators.
+          </p>
+          <p className="dialog-note">
+            Research on typed arithmetic shows that even simple sums take
+            several seconds and vary with the problem. It does not measure these
+            exact game modes. Our targets use that as context, with conservative
+            estimates for harder challenges.
+          </p>
+          <a
+            className="benchmark-source"
+            href={BENCHMARK_SOURCE}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Read the arithmetic study ↗
+          </a>
+          <p className="dialog-note">
+            A score below the target is a starting point. Compare your own
+            rounds in the same mode and challenge as you practice.
+          </p>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={dialog === 'help'}
         onOpenChange={(open) => setDialog(open ? 'help' : null)}
@@ -991,13 +1146,19 @@ export default function Home() {
               120 seconds. A three-second countdown gets you ready.
             </li>
             <li>
-              <b>Solve the whole expression.</b> Each operand is 1–20.
-              Multiplication and division come first, left to right. Then
-              addition and subtraction, left to right.
+              <b>Solve the whole expression.</b> Operands run from zero to 20 in
+              Kids, 50 in Adult, 100 in Legendary, or 1,000 in God mode. Kids
+              mode never produces negative intermediate or final answers; the
+              other modes can produce negative answers. Division never uses a
+              zero divisor. Multiplication and division come first, left to
+              right. Then addition and subtraction, left to right.
             </li>
             <li>
-              <b>Type, then press Enter.</b> Or use the number pad and ↵ button.
-              Answers are always whole numbers and can be negative or zero.
+              <b>Type, then press Enter.</b> The input accepts only whole
+              numbers, with an optional minus sign outside Kids mode. Use ± when
+              your phone keyboard has no minus key. Each question shows elapsed
+              seconds; the review includes reading and typing time for every
+              answer and skip.
             </li>
             <li>
               <b>Keep moving.</b> Each correct answer earns one point. A wrong
@@ -1005,9 +1166,9 @@ export default function Home() {
               The clock keeps running when you switch apps.
             </li>
             <li>
-              <b>Beat your own best.</b> Records are separate for every mode and
-              duration, saved only in this browser. Share your reward after each
-              round.
+              <b>Beat your own best.</b> Records are separate for every
+              difficulty, challenge, and duration, saved only in this browser.
+              Share your reward after each round.
             </li>
           </ol>
           <div className="help-example">
@@ -1027,8 +1188,8 @@ export default function Home() {
         <DialogContent className="info-dialog history-dialog">
           <DialogTitle>Your little victories</DialogTitle>
           <DialogDescription>
-            Personal bests stay on this device, separately for every mode and
-            duration.
+            Personal bests stay on this device, separately for every difficulty,
+            challenge, and duration.
           </DialogDescription>
           {history.length === 0 ? (
             <div className="empty-history">
@@ -1048,7 +1209,9 @@ export default function Home() {
                 {history.map((r) => (
                   <div className="history-row" key={r.id}>
                     <span>
-                      <strong>{getMode(r.mode).name}</strong>
+                      <strong>
+                        {getLevel(r.level).name} · {getMode(r.mode).name}
+                      </strong>
                       <small>
                         {r.duration}s ·{' '}
                         {new Date(r.date).toLocaleDateString(undefined, {
@@ -1066,6 +1229,34 @@ export default function Home() {
                 ))}
               </div>
             </>
+          )}
+          {legacyHistory.length > 0 && (
+            <section className="legacy-history">
+              <div className="history-heading">
+                <span>EARLIER ROUNDS</span>
+                <span>Original rules</span>
+              </div>
+              <p className="dialog-note">
+                Kept for you. New personal bests are tracked separately for the
+                four difficulty modes.
+              </p>
+              <div className="history-list">
+                {legacyHistory.map((r) => (
+                  <div className="history-row" key={r.id}>
+                    <span>
+                      <strong>{getMode(r.mode).name}</strong>
+                      <small>
+                        {r.duration}s · {accuracy(r)}% accuracy
+                      </small>
+                    </span>
+                    <b>
+                      {r.correct}
+                      <small>solved</small>
+                    </b>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </DialogContent>
       </Dialog>
