@@ -1,43 +1,93 @@
 import type { Metadata, Viewport } from 'next';
+import { SITE } from '@/lib/site-content';
+import { appAsset } from '@/lib/app-path';
 import './globals.css';
+
 export const metadata: Metadata = {
-  title: 'Mathmagician — Fast math. Sharp mind.',
-  description:
-    'Race the clock in four mental math difficulty modes. Play 10-second to 2-minute rounds, beat your personal best, and share your Mathmagician score. Works offline.',
+  metadataBase: new URL('https://lowkey.tools'),
+  title: SITE.title,
+  description: SITE.description,
   applicationName: 'Mathmagician',
-  alternates: { canonical: 'https://lowkey.tools/mathmagician' },
-  manifest: './manifest.webmanifest',
-  icons: { icon: './icon.svg', apple: './icons/apple-touch-icon.png' },
+  authors: [{ name: SITE.creator.name, url: SITE.creator.url }],
+  creator: SITE.creator.name,
+  publisher: SITE.publisher.name,
+  category: 'Games',
+  alternates: { canonical: SITE.url },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
+  manifest: appAsset('manifest.webmanifest'),
+  icons: {
+    icon: appAsset('icon.svg'),
+    apple: appAsset('icons/apple-touch-icon.png'),
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Mathmagician',
   },
   openGraph: {
-    title: 'Mathmagician — Fast math. Sharp mind.',
-    description:
-      'Four difficulty modes. A ticking clock. How many can you solve?',
-    url: 'https://lowkey.tools/mathmagician',
+    title: SITE.title,
+    description: SITE.description,
+    url: SITE.url,
     type: 'website',
-    siteName: 'Mathmagician',
+    siteName: 'Mathmagician by Lowkey Tools',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary',
-    title: 'Mathmagician — Fast math. Sharp mind.',
-    description: 'Race the clock. Solve fast. Share your score.',
+    title: SITE.title,
+    description: SITE.description,
   },
 };
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
   themeColor: '#111115',
+  colorScheme: 'dark',
 };
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
-      <body>{children}</body>
+      <head>
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href={`${SITE.url}/index.md`}
+          title="Mathmagician game guide in Markdown"
+        />
+        <link
+          rel="describedby"
+          href={`${SITE.url}/llms.txt`}
+          type="text/plain"
+        />
+      </head>
+      <body>
+        <a className="skip-link" href="#main-content">
+          Skip to the game
+        </a>
+        <noscript>
+          <p className="no-script">
+            Enable JavaScript to play Mathmagician. You can still read the game
+            rules, modes, and FAQs below.
+          </p>
+        </noscript>
+        {children}
+      </body>
     </html>
   );
 }

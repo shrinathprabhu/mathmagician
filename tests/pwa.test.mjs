@@ -162,6 +162,29 @@ void test(
     });
     assert.ok((await task).length > 0);
     assert.equal(networkCalls, 0);
+    listeners.fetch({
+      request: { url: scope + 'llms.txt', method: 'GET', mode: 'navigate' },
+      respondWith(p) {
+        task = p;
+      },
+    });
+    assert.match(await task, /^# Mathmagician/);
+    listeners.fetch({
+      request: {
+        url: scope + 'does-not-exist',
+        method: 'GET',
+        mode: 'navigate',
+      },
+      respondWith(p) {
+        task = p;
+      },
+    });
+    await assert.rejects(task, /Offline/);
+    assert.equal(
+      networkCalls,
+      1,
+      'Unknown routes must reach the network, not become a soft 404',
+    );
     let intercepted = false;
     for (const request of [
       { url: 'https://other.test/', method: 'GET', mode: 'navigate' },

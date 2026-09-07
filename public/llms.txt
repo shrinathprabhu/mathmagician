@@ -1,0 +1,20 @@
+# Mathmagician
+
+> Mathmagician is a free timed mental math game by Lowkey Tools. Practice addition, subtraction, multiplication, and division in 10-second to 2-minute rounds, then review your speed and share your score.
+
+Canonical page: https://lowkey.tools/mathmagician
+
+The game is free, frontend-only, and needs JavaScript. Four difficulty modes support five expression challenges and 10, 20, 30, 60, or 120-second rounds. Correct whole-number answers earn one point per expression. Targets are editorial practice estimates, not measured human averages. Records stay in this browser; offline play works after the first successful cache.
+
+## Game and rules
+- [Play Mathmagician](https://lowkey.tools/mathmagician): Canonical interactive game with visible rules, FAQs, and creator credits.
+- [Complete game guide](https://lowkey.tools/mathmagician/index.md): Markdown version of the rules, modes, scoring, timing, offline support, and limitations shown on the game page.
+- [Frequently asked questions](https://lowkey.tools/mathmagician#faq): Direct answers about arithmetic, scoring, and installation.
+
+## Makers
+- [OwlEye Analytics](https://owleye.dev): Cookie-free web analytics; Mathmagician is from the makers of OwlEye.
+- [Shrinath Prabhu](https://shrinath.me): Mathmagician’s builder; frontend engineering, projects, and writing.
+- [Lowkey Tools](https://lowkey.tools): The collection that includes Mathmagician.
+
+## Reference
+- [Arithmetic research](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0168431): Context for practice-target estimates; it does not measure these game modes or establish a Mathmagician player average.

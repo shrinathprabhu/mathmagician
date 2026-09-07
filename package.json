@@ -3,16 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build && node scripts/build-pwa.mjs",
+    "build": "node scripts/build-discovery.mjs && vinext build && node scripts/build-pwa.mjs",
     "start": "node scripts/serve.mjs",
-    "lint": "oxlint app lib scripts tests next.config.ts vite.config.ts",
+    "lint": "oxlint app components/game lib scripts tests next.config.ts vite.config.ts",
     "format": "oxfmt",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:canonical": "MATHMAGICIAN_BASE_PATH=/mathmagician npm run build"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

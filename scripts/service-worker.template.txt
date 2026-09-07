@@ -18,6 +18,17 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET' || !request.url.startsWith(SCOPE)) return;
   if (request.mode === 'navigate') {
+    const pathname = new URL(request.url).pathname;
+    const home = new URL(SCOPE).pathname;
+    // Never turn unknown routes or readable .txt/.md documents into the home
+    // page: preserve real 404s and serve each cached document as its own content.
+    if (pathname !== home && pathname !== home + 'index.html') {
+      event.respondWith((async () => {
+        const cache = await caches.open(CACHE);
+        return await cache.match(request) || fetch(request);
+      })());
+      return;
+    }
     // Cache-first navigation keeps HTML and its hashed assets on one version
     // and opens instantly offline. The browser independently checks sw.js for updates.
     event.respondWith((async () => {

@@ -1,6 +1,12 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@source './';
+@source '../components/game';
+@source '../components/ui/button.tsx';
+@source '../components/ui/dialog.tsx';
+@source '../components/ui/progress.tsx';
+@source '../components/ui/radio-group.tsx';
 @custom-variant dark (&:is(.dark *));
 @theme inline {
   --color-background: var(--background);
@@ -1937,5 +1943,243 @@ h1 span {
   .benchmark-number {
     padding: 17px 12px;
     gap: 12px;
+  }
+}
+
+/* Crawlable supporting content is static HTML, with native disclosure controls. */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  transform: translateY(-160%);
+  z-index: 100;
+  padding: 12px 18px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.skip-link:focus {
+  transform: none;
+}
+.no-script {
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+}
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.main-shell:focus {
+  outline: none;
+}
+.game-guide {
+  margin-top: 58px;
+}
+.in-game .game-guide {
+  display: none;
+}
+.guide-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: #b5a4c6;
+  font-size: 13px;
+}
+.guide-breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.game-guide section {
+  padding-block: 36px;
+  border-bottom: 1px solid #3e3349;
+}
+.game-guide h2 {
+  font-size: clamp(24px, 3.5vw, 32px);
+  letter-spacing: -0.6px;
+  margin: 0 0 18px;
+}
+.game-guide h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.game-guide p,
+.guide-steps li {
+  color: #b9abca;
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 12px 0 0;
+}
+.game-guide a:not(.maker-card),
+.maker-link {
+  color: #d2b4f5;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.game-guide a:hover {
+  color: #f5edff;
+}
+.guide-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+.guide-intro .eyebrow,
+.makers-section > .eyebrow {
+  display: block;
+  margin-bottom: 16px;
+}
+.guide-steps ol {
+  margin: 0;
+  padding-left: 22px;
+}
+.guide-steps li {
+  padding-left: 5px;
+}
+.guide-steps li::marker {
+  color: #c1a5e3;
+  font-weight: 600;
+}
+.guide-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.guide-mode-grid > div {
+  background: #251e2d;
+  padding: 20px;
+  border-radius: 12px;
+}
+.guide-mode-grid strong {
+  font: 500 26px var(--font-mono);
+  color: #d0b1f1;
+}
+.guide-mode-grid p {
+  font-size: 13px;
+}
+.guide-challenges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+}
+.guide-challenges li {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+}
+.guide-challenges span {
+  color: #b9abca;
+}
+.game-faq details {
+  border-bottom: 1px solid #3e3349;
+}
+.game-faq summary {
+  cursor: pointer;
+  padding-block: 18px;
+  min-height: 56px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #e5d8f1;
+}
+.game-faq summary::marker {
+  color: #ac8bd0;
+}
+.game-faq summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+.game-faq details p {
+  margin: 0 0 22px;
+  max-width: 82ch;
+}
+.game-guide .guide-research {
+  font-size: 13px;
+  margin-top: 24px;
+  max-width: 88ch;
+}
+.maker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+.maker-card {
+  display: flex;
+  flex-direction: column;
+  padding: 26px;
+  background: #2c2236;
+  border: 1px solid #63457c;
+  border-radius: 14px;
+}
+.maker-card:hover {
+  background: #35273f;
+  border-color: #b99ad7;
+}
+.maker-card .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.1px;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.maker-card h3 {
+  font-size: 23px;
+  margin: 0;
+}
+.maker-card h3 span {
+  float: right;
+  color: #c6a4e9;
+}
+.maker-card p {
+  margin-bottom: 20px;
+}
+.maker-link {
+  font-size: 14px;
+  margin-top: auto;
+}
+.site-footer a,
+.footer-actions button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .game-guide {
+    margin-top: 30px;
+  }
+  .game-guide section {
+    padding-block: 28px;
+  }
+  .guide-intro,
+  .maker-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+  }
+  .guide-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .guide-mode-grid > div {
+    padding: 16px;
+  }
+  .maker-card {
+    padding: 22px;
+  }
+  .game-guide p,
+  .guide-steps li {
+    font-size: 14px;
+  }
+  .game-faq summary {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
   }
 }

@@ -42,10 +42,16 @@ All app, social-share, Open Graph, canonical, footer, and sitemap references use
 
 The manifest contains 192/512 icons, a maskable icon, and an Apple touch icon. No runtime third-party fonts or CDN assets are required. Open once online to precache; then the game works offline. Updates activate after old tabs close so HTML and its hashed assets stay on one version.
 
-The Sites preview is hosted at its own root. For deployment at **lowkey.tools/mathmagician**, set `basePath: '/mathmagician'` in `next.config.ts` before rebuilding, serve the app under that prefix, and redirect the bare path to `/mathmagician/` so relative PWA URLs resolve within its scope. Adjust static-host `_headers` paths to the prefix. Link metadata alone does not publish into the existing Lowkey Tools website, and a URL path does not require a separate DNS record.
+The Sites preview is hosted at its own root. Use `npm run build:canonical` for **lowkey.tools/mathmagician**, then serve the contents of `dist/client/` at that prefix. The build sets script, stylesheet, icon, manifest, service-worker, and response-header paths automatically. `MATHMAGICIAN_BASE_PATH=/mathmagician npm start` previews that variant locally. Link metadata alone does not publish into the existing Lowkey Tools website, and a URL path does not require a separate DNS record.
+
+## Search and answer engines
+
+The page includes static rules and FAQs, linked JSON-LD entities, search/social metadata, and prominent OwlEye and Shrinath creator links. `lib/site-content.ts` supplies both the visible guide and structured data. The build generates matching `robots.txt`, `sitemap.xml`, `llms.txt`, and `index.md` files. The game remains the primary page content.
+
+See [SEO and canonical deployment notes](docs/seo.md) for the root-domain robots/sitemap/llms integration, public indexing requirements, and verification steps. An authenticated Sites preview is not search-indexable. `llms.txt` is optional discovery support, not a guarantee of AI citations.
 
 The optional WebMCP surface exposes the same settings and local record state via `configure_math_round` (mode, level, duration) and `read_math_progress`. Live contract validation requires a supporting browser and is not needed for gameplay.
 
 ## Checks
 
-Tests cover 100,000 seeded questions across all difficulty/challenge combinations, zero and negative handling, division safety, 100 timed configurations, per-question timing, numeric-only input and large answers, comparison bands, separate personal bests, original-rule archives, metadata, and generated-service-worker offline/cache behavior. Artifact tests run after a production build. Lint targets authored application code; vendored starter components remain unchanged. Browser interaction and on-device PWA installation are separate manual checks.
+Tests cover 100,000 seeded questions across all difficulty/challenge combinations, zero and negative handling, division safety, 100 timed configurations, per-question timing, numeric-only input and large answers, comparison bands, separate personal bests, original-rule archives, metadata/JSON-LD consistency, crawl files, deployment asset paths, a compressed CSS budget, and generated-service-worker offline/cache/404 behavior. Run artifact tests after a production build; use `MATHMAGICIAN_BASE_PATH=/mathmagician npm test` for the canonical build. Lint targets authored application code; vendored starter components remain unchanged. Browser interaction and on-device PWA installation are separate manual checks.

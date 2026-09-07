@@ -2,7 +2,9 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
+import { getBasePath } from '../lib/base-path.mjs';
 const root = resolve('dist/client');
+const basePath = getBasePath();
 const types = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -13,11 +15,19 @@ const types = {
   '.png': 'image/png',
   '.txt': 'text/plain',
   '.xml': 'application/xml',
+  '.md': 'text/markdown; charset=utf-8',
 };
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
-    let path = resolve(root, '.' + decodeURIComponent(url.pathname));
+    const pathname = decodeURIComponent(url.pathname);
+    if (
+      basePath &&
+      pathname !== basePath &&
+      !pathname.startsWith(basePath + '/')
+    )
+      throw new Error('Outside app');
+    let path = resolve(root, '.' + (pathname.slice(basePath.length) || '/'));
     if (path !== root && !path.startsWith(root + sep)) {
       res.writeHead(403);
       res.end();
@@ -37,5 +47,7 @@ createServer(async (req, res) => {
     res.end('Not found');
   }
 }).listen(Number(process.env.PORT || 4173), 'localhost', () =>
-  console.log(`Mathmagician: http://localhost:${process.env.PORT || 4173}/`),
+  console.log(
+    `Mathmagician: http://localhost:${process.env.PORT || 4173}${basePath}/`,
+  ),
 );

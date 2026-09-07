@@ -9,10 +9,7 @@
   "background_color": "#111115",
   "theme_color": "#111115",
   "lang": "en",
-  "categories": [
-    "games",
-    "education"
-  ],
+  "categories": ["games", "education"],
   "icons": [
     {
       "src": "./icons/icon-192.png",
@@ -32,5 +29,7 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "dir": "ltr",
+  "prefer_related_applications": false
 }
