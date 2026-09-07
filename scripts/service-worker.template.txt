@@ -1,0 +1,33 @@
+/* All game assets are precached atomically. Failed installs keep the previous
+   working app; new versions activate after existing tabs have closed. */
+const SCOPE = self.registration.scope;
+const PREFIX = `mathmagician-${new URL(SCOPE).pathname}-`;
+const CACHE = `${PREFIX}__VERSION__`;
+const ASSETS = __ASSETS__;
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS.map(path => new URL(path, SCOPE).href))));
+});
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET' || !request.url.startsWith(SCOPE)) return;
+  if (request.mode === 'navigate') {
+    // Cache-first navigation keeps HTML and its hashed assets on one version
+    // and opens instantly offline. The browser independently checks sw.js for updates.
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      return await cache.match(SCOPE) || fetch(request);
+    })());
+    return;
+  }
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    return await cache.match(request) || fetch(request);
+  })());
+});
