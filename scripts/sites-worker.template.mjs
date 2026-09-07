@@ -40,7 +40,7 @@ const worker = {
     const path = home ? '/index.html' : url.pathname.slice(BASE.length);
     const inScope =
       !BASE || url.pathname === BASE || url.pathname.startsWith(`${BASE}/`);
-    if (!inScope || !Object.hasOwn(FILES, path) || path === '/404.html') {
+    if (!inScope || !Object.hasOwn(FILES, path)) {
       headers.set('Cache-Control', 'no-store');
       headers.set('X-Robots-Tag', 'noindex');
       headers.set('Content-Type', 'text/html; charset=utf-8');

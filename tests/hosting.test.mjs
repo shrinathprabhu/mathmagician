@@ -171,7 +171,8 @@ void test('Sites adapter enforces the same headers, preserves conditional respon
     const response = sitesWorker.fetch(
       new Request(`https://example.com${base}${path}`),
     );
-    assert.equal(response.status, path === '/404.html' ? 404 : 200);
+    // Cache.addAll rejects the entire installation if any precached file is not 2xx.
+    assert.equal(response.status, 200, `Precache must succeed: ${path}`);
     for (const [key, value] of Object.entries(headers(path)))
       assert.equal(response.headers.get(key), value, `${path}: ${key}`);
     const bytes = await readFile(
