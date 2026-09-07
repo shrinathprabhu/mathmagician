@@ -1,7 +1,25 @@
 import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
 import { SITE } from '@/lib/site-content';
 import { appAsset } from '@/lib/app-path';
 import './globals.css';
+
+const geistSans = localFont({
+  src: './fonts/geist-10dc7658.woff2',
+  variable: '--font-geist-sans',
+  weight: '100 900',
+  style: 'normal',
+  display: 'swap',
+  fallback: ['Arial', 'sans-serif'],
+});
+const geistMono = localFont({
+  src: './fonts/geist-mono-10dc7658.woff2',
+  variable: '--font-geist-mono',
+  weight: '100 900',
+  style: 'normal',
+  display: 'swap',
+  fallback: ['Consolas', 'monospace'],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://lowkey.tools'),
@@ -62,7 +80,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html
+      lang="en"
+      className={`dark ${geistSans.variable} ${geistMono.variable}`}
+    >
       <head>
         <link
           rel="alternate"
