@@ -42,7 +42,7 @@ npm run build:vercel
 
 The result is `.vercel/output/config.json` plus `.vercel/output/static/`, using Build Output API version 3. Vercel reads this output directly; do not select a Next.js server preset or add an unrelated Output Directory override. Deployment credentials and project linking are separate from this repository configuration.
 
-The production hostname is **https://mathmagician.lowkey.tools**. Attach it to this Vercel project and use the DNS records shown by Vercel for that hostname. There is a single root-hosted build; the former path-prefix build option has been removed.
+The production hostname is **https://mathmagician.lowkey.tools/**. Attach it to this Vercel project and use the DNS records shown by Vercel for that hostname. There is a single root-hosted build; the former path-prefix build option has been removed.
 
 The homepage maps locally to `index.html`; all asset URLs, the manifest, and the service-worker scope start at `/`. Files resolve normally and unknown paths receive the exported error page with HTTP 404. No request is proxied to Lowkey Tools, and no catch-all route serves the homepage with status 200. The Vercel project remains separate from the Lowkey Tools directory. See [SEO deployment notes](seo.md).
 

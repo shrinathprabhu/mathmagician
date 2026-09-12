@@ -91,15 +91,17 @@ void test('crawler files, Markdown discovery, and asset paths use the standalone
       (name) => readFile(`${output}/${name}`, 'utf8'),
     ),
   );
-  assert.ok(robots.includes(`Sitemap: ${SITE.url}/sitemap.xml`));
+  assert.ok(
+    robots.includes('Sitemap: https://mathmagician.lowkey.tools/sitemap.xml'),
+  );
   assert.match(robots, /User-agent: \*\nAllow: \//);
   assert.equal([...sitemap.matchAll(/<loc>/g)].length, 1);
   assert.ok(sitemap.includes(`<loc>${SITE.url}</loc>`));
   assert.match(llms, /^# Mathmagician\n/);
-  assert.ok(llms.includes(`${SITE.url}/index.md`));
+  assert.ok(llms.includes('https://mathmagician.lowkey.tools/index.md'));
   for (const answer of FAQS) assert.ok(markdown.includes(answer.answer));
-  assert.ok(html.includes(`href="${SITE.url}/llms.txt"`));
-  assert.ok(html.includes(`href="${SITE.url}/index.md"`));
+  assert.ok(html.includes('href="https://mathmagician.lowkey.tools/llms.txt"'));
+  assert.ok(html.includes('href="https://mathmagician.lowkey.tools/index.md"'));
   assert.ok(html.includes('href="/manifest.webmanifest"'));
   assert.ok(html.includes('href="/mathmagician.svg"'));
   assert.ok(
@@ -115,9 +117,20 @@ void test('crawler files, Markdown discovery, and asset paths use the standalone
       'No obsolete subpath asset references',
     );
   }
-  for (const doc of [html, robots, sitemap, llms, markdown])
+  for (const doc of [html, robots, sitemap, llms, markdown]) {
     assert.ok(!doc.includes('lowkey.tools/mathmagician'));
-  assert.equal(SITE.url, 'https://mathmagician.lowkey.tools');
+    assert.ok(
+      !doc.includes('mathmagician.lowkey.tools//'),
+      'No doubled URL path separators',
+    );
+  }
+  assert.equal(SITE.url, 'https://mathmagician.lowkey.tools/');
+  assert.equal(
+    SITE.url,
+    new URL(SITE.url).href,
+    'Canonical uses normalized root URL',
+  );
+  assert.equal(SITE.image.url, 'https://mathmagician.lowkey.tools/og.jpg');
   const socialImage = await readFile(`${output}/og.jpg`);
   assert.equal(socialImage.subarray(0, 3).toString('hex'), 'ffd8ff');
   assert.ok(socialImage.length < 400_000, 'Social image stays below 400 kB');

@@ -2,7 +2,7 @@
 
 > Mathmagician is a free timed mental math game by Lowkey Tools. Practice addition, subtraction, multiplication, and division in 10-second to 2-minute rounds, then review your speed and share your score.
 
-Canonical page: https://mathmagician.lowkey.tools
+Canonical page: https://mathmagician.lowkey.tools/
 This Markdown document mirrors the public game guide and FAQ. The interactive game is at the canonical page.
 
 ## How to play

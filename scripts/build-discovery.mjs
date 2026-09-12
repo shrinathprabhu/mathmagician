@@ -18,7 +18,7 @@ The game is free, frontend-only, and needs JavaScript. Four difficulty modes sup
 
 ## Game and rules
 - [Play Mathmagician](${SITE.url}): Canonical interactive game with visible rules, FAQs, and creator credits.
-- [Complete game guide](${SITE.url}/index.md): Markdown version of the rules, modes, scoring, timing, offline support, and limitations shown on the game page.
+- [Complete game guide](${new URL('index.md', SITE.url).href}): Markdown version of the rules, modes, scoring, timing, offline support, and limitations shown on the game page.
 - [Frequently asked questions](${SITE.url}#faq): Direct answers about arithmetic, scoring, and installation.
 
 ## Makers
@@ -69,7 +69,7 @@ await Promise.all([
   writeFile('public/index.md', guide),
   writeFile(
     'public/robots.txt',
-    `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\n`,
+    `User-agent: *\nAllow: /\n\nSitemap: ${new URL('sitemap.xml', SITE.url).href}\n`,
   ),
   writeFile(
     'public/sitemap.xml',

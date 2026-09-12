@@ -1,6 +1,6 @@
 # Search and answer-engine readiness
 
-The canonical URL is **https://mathmagician.lowkey.tools**. The Sites deployment remains an owner-only preview; search engines cannot index an authenticated preview. These changes prepare the app for public deployment on the canonical host, but do not configure Lowkey Tools, its CDN, DNS, or search-engine accounts.
+The canonical URL is **https://mathmagician.lowkey.tools/**. The Sites deployment remains an owner-only preview; search engines cannot index an authenticated preview. These changes prepare the app for public deployment on the canonical host, but do not configure Lowkey Tools, its CDN, DNS, or search-engine accounts.
 
 ## Implemented
 

@@ -53,7 +53,7 @@ export const LEVELS = [
 ] as const;
 export type LevelId = (typeof LEVELS)[number]['id'];
 export type Config = { mode: ModeId; level: LevelId; duration: Duration };
-export const APP_URL = 'https://mathmagician.lowkey.tools';
+export const APP_URL = 'https://mathmagician.lowkey.tools/';
 export const getLevel = (id: LevelId) =>
   LEVELS.find((level) => level.id === id)!;
 export const BENCHMARK_SOURCE =

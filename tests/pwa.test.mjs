@@ -20,7 +20,7 @@ void test(
     assert.match(html, /<title>Mathmagician/);
     assert.match(
       html,
-      /rel="canonical" href="https:\/\/mathmagician.lowkey.tools"/,
+      /rel="canonical" href="https:\/\/mathmagician.lowkey.tools\/"/,
     );
     assert.doesNotMatch(
       html,

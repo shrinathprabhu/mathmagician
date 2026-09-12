@@ -146,6 +146,7 @@ void test('cache policies keep mutable files fresh, hashed assets immutable, and
 
 void test('build metadata is excluded from public files and the offline precache', async () => {
   for (const path of [
+    '404/index.html',
     '.vite/manifest.json',
     'vinext-client-entry-manifest.json',
     'hosting-policy.json',

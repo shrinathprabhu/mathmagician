@@ -38,6 +38,9 @@ export async function buildSecurity(output) {
   // The error page has no interactive controls. Keep its static HTML and styles,
   // and remove the unnecessary hydration runtime and script preload requests.
   const notFound = await readFile(join(output, '404.html'), 'utf8');
+  // With trailingSlash enabled, Vinext also emits a hydrated 404/index.html.
+  // Hosts use the sanitized 404.html below as the single error document.
+  await rm(join(output, '404'), { recursive: true, force: true });
   await writeFile(
     join(output, '404.html'),
     notFound

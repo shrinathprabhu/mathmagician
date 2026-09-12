@@ -8,7 +8,7 @@ export const SITE = {
   summary:
     'Mathmagician is a free timed mental math game by Lowkey Tools. Practice addition, subtraction, multiplication, and division in 10-second to 2-minute rounds, then review your speed and share your score.',
   image: {
-    url: `${APP_URL}/og.jpg`,
+    url: new URL('og.jpg', APP_URL).href,
     width: 1732,
     height: 908,
     alt: 'Mathmagician. Fast math. Sharp mind. How many can you solve in 30 seconds?',

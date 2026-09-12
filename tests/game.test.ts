@@ -243,7 +243,7 @@ void test('share links, record isolation, storage validation, and preservation o
   assert.match(text, /3 calculations in 30 seconds/);
   assert.match(text, /Adult mode · Full wizard/);
   assert.match(text, /1.00s average/);
-  assert.ok(text.endsWith('https://mathmagician.lowkey.tools'));
+  assert.ok(text.endsWith('https://mathmagician.lowkey.tools/'));
   assert.equal(parseResults('bad').length, 0);
   assert.equal(
     parseResults(

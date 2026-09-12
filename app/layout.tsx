@@ -90,12 +90,12 @@ export default function RootLayout({
         <link
           rel="alternate"
           type="text/markdown"
-          href={`${SITE.url}/index.md`}
+          href={new URL('index.md', SITE.url).href}
           title="Mathmagician game guide in Markdown"
         />
         <link
           rel="describedby"
-          href={`${SITE.url}/llms.txt`}
+          href={new URL('llms.txt', SITE.url).href}
           type="text/plain"
         />
       </head>

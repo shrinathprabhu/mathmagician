@@ -36,7 +36,7 @@ The last 50 results and best scores are stored separately for each difficulty/ch
 
 ## Sharing and credits
 
-All app, social-share, Open Graph, canonical, footer, and sitemap references use **https://mathmagician.lowkey.tools**. Native Web Share, clipboard, X, and WhatsApp remain user-triggered actions. Credits link to [OwlEye Analytics](https://owleye.dev), [Shrinath Prabhu](https://shrinath.me), [@shrinath_prabhu on X](https://x.com/shrinath_prabhu), and [Lowkey Tools](https://lowkey.tools). The “Beyond the scoreboard” section features one contextual recommendation for SuperSplit using its own subdomain.
+All app, social-share, Open Graph, canonical, footer, and sitemap references use **https://mathmagician.lowkey.tools/**. Native Web Share, clipboard, X, and WhatsApp remain user-triggered actions. Credits link to [OwlEye Analytics](https://owleye.dev), [Shrinath Prabhu](https://shrinath.me), [@shrinath_prabhu on X](https://x.com/shrinath_prabhu), and [Lowkey Tools](https://lowkey.tools). The “Beyond the scoreboard” section features one contextual recommendation for SuperSplit using its own subdomain.
 
 ## PWA and deployment
 
