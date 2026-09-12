@@ -1,5 +1,11 @@
 import { writeFile } from 'node:fs/promises';
-import { SITE, FAQS, HOW_TO_PLAY, RESEARCH_URL } from '../lib/site-content.ts';
+import {
+  SITE,
+  FAQS,
+  HOW_TO_PLAY,
+  RELATED_APPS,
+  RESEARCH_URL,
+} from '../lib/site-content.ts';
 import { LEVELS, MODES } from '../lib/game.ts';
 
 const llms = `# Mathmagician
@@ -18,7 +24,11 @@ The game is free, frontend-only, and needs JavaScript. Four difficulty modes sup
 ## Makers
 - [OwlEye Analytics](${SITE.publisher.url}): Cookie-free web analytics; Mathmagician is from the makers of OwlEye.
 - [Shrinath Prabhu](${SITE.creator.url}): Mathmagician’s builder; frontend engineering, projects, and writing.
+- [Follow @shrinath_prabhu on X](${SITE.creator.social}): Follow the maker’s updates.
 - [Lowkey Tools](https://lowkey.tools): The collection that includes Mathmagician.
+
+## Beyond the scoreboard
+${RELATED_APPS.map((app) => `- [${app.name}](${app.url}): ${app.description}`).join('\n')}
 
 ## Reference
 - [Arithmetic research](${RESEARCH_URL}): Context for practice-target estimates; it does not measure these game modes or establish a Mathmagician player average.
@@ -46,6 +56,11 @@ ${FAQS.map((faq) => `### ${faq.question}\n\n${faq.answer}`).join('\n\n')}
 
 ## Makers and references
 Built by [Shrinath Prabhu](${SITE.creator.url}), from the makers of [OwlEye Analytics](${SITE.publisher.url}), as part of [Lowkey Tools](https://lowkey.tools).
+
+[Follow @shrinath_prabhu on X](${SITE.creator.social}) for more from the maker.
+
+## Beyond the scoreboard
+${RELATED_APPS.map((app) => `- [${app.name}](${app.url}): ${app.description}`).join('\n')}
 
 [Arithmetic research](${RESEARCH_URL}) provides context for estimated practice targets, not population averages for this app.
 `;

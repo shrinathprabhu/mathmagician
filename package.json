@@ -13,7 +13,6 @@
     "format": "oxfmt",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "build:canonical": "MATHMAGICIAN_BASE_PATH=/mathmagician npm run build",
     "build:vercel": "npm run build && node scripts/build-vercel.mjs"
   },
   "dependencies": {

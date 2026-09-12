@@ -39,7 +39,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { CountdownClock, RoundClock, QuestionClock } from './round-clock';
-import { appAsset } from '@/lib/app-path';
 import {
   MODES,
   LEVELS,
@@ -217,8 +216,8 @@ export default function MathGame({ children }: { children: ReactNode }) {
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       // Explicit scope is safe with or without a trailing slash in the page URL.
       void navigator.serviceWorker
-        .register(appAsset('sw.js'), {
-          scope: appAsset(''),
+        .register('/sw.js', {
+          scope: '/',
           updateViaCache: 'none',
         })
         .then(() => navigator.serviceWorker.ready)
@@ -442,7 +441,7 @@ export default function MathGame({ children }: { children: ReactNode }) {
         <Link className="brand" href="/" aria-label="Mathmagician home">
           <span className="brand-mark">
             <Image
-              src={appAsset('mathmagician.svg')}
+              src="/mathmagician.svg"
               width={38}
               height={38}
               alt=""
@@ -1004,24 +1003,31 @@ export default function MathGame({ children }: { children: ReactNode }) {
       </main>
       <footer className="site-footer">
         <span className="creator-credit">
-          From the makers of{' '}
-          <a
-            href="https://owleye.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            OwlEye Analytics
-          </a>
-          .<br />
-          Built by{' '}
-          <a
-            href="https://shrinath.me"
-            target="_blank"
-            rel="author noopener noreferrer"
-          >
-            Shrinath Prabhu
-          </a>
-          .
+          <span>
+            One small spark in <a href="https://lowkey.tools">Lowkey Tools</a>.
+          </span>
+          <span>
+            From the makers of{' '}
+            <a
+              href="https://owleye.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              OwlEye Analytics
+            </a>
+            .
+          </span>
+          <span>
+            Built by{' '}
+            <a
+              href="https://shrinath.me"
+              target="_blank"
+              rel="author noopener noreferrer"
+            >
+              Shrinath Prabhu
+            </a>
+            .
+          </span>
         </span>
         <div className="footer-actions">
           <button onClick={() => setDialog('history')} disabled={isActive}>
@@ -1038,7 +1044,7 @@ export default function MathGame({ children }: { children: ReactNode }) {
               </>
             ) : (
               <>
-                <span className="footer-star">✦</span> lowkey.tools/mathmagician
+                <span className="footer-star">✦</span> mathmagician.lowkey.tools
               </>
             )}
           </span>

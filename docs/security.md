@@ -42,18 +42,11 @@ npm run build:vercel
 
 The result is `.vercel/output/config.json` plus `.vercel/output/static/`, using Build Output API version 3. Vercel reads this output directly; do not select a Next.js server preset or add an unrelated Output Directory override. Deployment credentials and project linking are separate from this repository configuration.
 
-For a deployment mounted at the canonical path, set the Vercel build environment variable `MATHMAGICIAN_BASE_PATH=/mathmagician`, or build locally with:
+The production hostname is **https://mathmagician.lowkey.tools**. Attach it to this Vercel project and use the DNS records shown by Vercel for that hostname. There is a single root-hosted build; the former path-prefix build option has been removed.
 
-```sh
-MATHMAGICIAN_BASE_PATH=/mathmagician npm run build:vercel
-MATHMAGICIAN_BASE_PATH=/mathmagician npm test
-```
+The homepage maps locally to `index.html`; all asset URLs, the manifest, and the service-worker scope start at `/`. Files resolve normally and unknown paths receive the exported error page with HTTP 404. No request is proxied to Lowkey Tools, and no catch-all route serves the homepage with status 200. The Vercel project remains separate from the Lowkey Tools directory. See [SEO deployment notes](seo.md).
 
-The generated files and rules are scoped to `/mathmagician`. Both `/mathmagician` and `/mathmagician/` serve the homepage; metadata consistently identifies `https://lowkey.tools/mathmagician`. Only the homepage rewrites to `index.html`. Files are resolved normally and unknown app paths receive the exported error page with HTTP 404. There is no catch-all rewrite that returns the homepage with status 200.
-
-When integrating into the existing Lowkey Tools deployment, merge the scoped assets and routes into its build output, preserving routes for the other tools. This standalone project's configuration does not alter that other deployment. Keep the root-domain crawler integration in [SEO deployment notes](seo.md).
-
-For Sites, use `npm run build` and pass the generated `work/sites-deploy/` project directory to the Sites packaging helper. This contains the standalone Worker and copied Sites metadata. Do not include a separate `dist/client/` directory in that preview archive: Sites would serve those files before the response policy. The original `dist/client/` remains the output for other static hosts and the input for Vercel packaging. For local HTTP checks, `npm start` applies the generated `_headers` policy; use `MATHMAGICIAN_BASE_PATH=/mathmagician npm start` after a canonical build.
+For Sites, use `npm run build` and pass the generated `work/sites-deploy/` project directory to the Sites packaging helper. This contains the standalone Worker and copied Sites metadata. Do not include a separate `dist/client/` directory in that preview archive: Sites would serve those files before the response policy. The original `dist/client/` remains the output for other static hosts and the input for Vercel packaging. For local HTTP checks, `npm start` applies the generated `_headers` policy.
 
 After a real Vercel/canonical deployment, inspect response headers on the homepage, one hashed asset, manifest, service worker, and a missing URL. Confirm the same checks on the public hostname, since a reverse proxy or authentication gateway can change responses. Repository checks validate generated policy and artifacts, not account-level firewall settings.
 

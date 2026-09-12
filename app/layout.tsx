@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { SITE } from '@/lib/site-content';
-import { appAsset } from '@/lib/app-path';
 import './globals.css';
 
 const geistSans = localFont({
@@ -22,7 +21,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://lowkey.tools'),
+  metadataBase: new URL(SITE.url),
   title: SITE.title,
   description: SITE.description,
   applicationName: 'Mathmagician',
@@ -42,10 +41,10 @@ export const metadata: Metadata = {
       'max-video-preview': -1,
     },
   },
-  manifest: appAsset('manifest.webmanifest'),
+  manifest: '/manifest.webmanifest',
   icons: {
-    icon: appAsset('mathmagician.svg'),
-    apple: appAsset('icons/mathmagician-apple-touch.png'),
+    icon: '/mathmagician.svg',
+    apple: '/icons/mathmagician-apple-touch.png',
   },
   appleWebApp: {
     capable: true,
@@ -59,11 +58,14 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'Mathmagician by Lowkey Tools',
     locale: 'en_US',
+    images: [{ ...SITE.image, type: 'image/jpeg' }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
+    creator: '@shrinath_prabhu',
     title: SITE.title,
     description: SITE.description,
+    images: [{ url: SITE.image.url, alt: SITE.image.alt }],
   },
 };
 

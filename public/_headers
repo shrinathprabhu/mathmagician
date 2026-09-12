@@ -19,6 +19,9 @@
   Cache-Control: public, max-age=86400, must-revalidate
 /mathmagician.svg
   Cache-Control: public, max-age=86400, must-revalidate
+/og.jpg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=86400, must-revalidate
 /fonts/*
   Cache-Control: public, max-age=86400, must-revalidate
   X-Robots-Tag: noindex

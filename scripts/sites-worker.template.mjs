@@ -1,6 +1,5 @@
 // Hosting adapter only: all gameplay and persistence remain in the browser.
 /* oxlint-disable no-undef */
-const BASE = __BASE__;
 const RULES = __RULES__;
 const FILES = __FILES__;
 const decoded = new Map();
@@ -33,14 +32,8 @@ const worker = {
       headers.set('Cache-Control', 'no-store');
       return new Response(null, { status: 405, headers });
     }
-    const home =
-      url.pathname === BASE ||
-      url.pathname === `${BASE}/` ||
-      url.pathname === `${BASE}/index.html`;
-    const path = home ? '/index.html' : url.pathname.slice(BASE.length);
-    const inScope =
-      !BASE || url.pathname === BASE || url.pathname.startsWith(`${BASE}/`);
-    if (!inScope || !Object.hasOwn(FILES, path)) {
+    const path = url.pathname === '/' ? '/index.html' : url.pathname;
+    if (!Object.hasOwn(FILES, path)) {
       headers.set('Cache-Control', 'no-store');
       headers.set('X-Robots-Tag', 'noindex');
       headers.set('Content-Type', 'text/html; charset=utf-8');

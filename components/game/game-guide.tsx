@@ -1,4 +1,10 @@
-import { FAQS, HOW_TO_PLAY, RESEARCH_URL, SITE } from '@/lib/site-content';
+import {
+  FAQS,
+  HOW_TO_PLAY,
+  RELATED_APPS,
+  RESEARCH_URL,
+  SITE,
+} from '@/lib/site-content';
 import { LEVELS, MODES } from '@/lib/game';
 
 // Server content stays readable in the initial HTML and adds no interactive JS.
@@ -72,13 +78,36 @@ export default function GameGuide() {
           average.
         </p>
       </section>
+      <section className="related-tools" aria-labelledby="related-tools-title">
+        <div className="related-tools-heading">
+          <div>
+            <span className="eyebrow">BEYOND THE SCOREBOARD</span>
+            <h2 id="related-tools-title">
+              Your next division problem? Dinner.
+            </h2>
+          </div>
+          <a href="https://lowkey.tools" className="collection-link">
+            Find your next tool on lowkey.tools
+          </a>
+        </div>
+        <div className="related-tools-grid">
+          {RELATED_APPS.map((app) => (
+            <a className="related-tool-card" href={app.url} key={app.name}>
+              <span className="eyebrow">{app.cue}</span>
+              <h3>{app.title}</h3>
+              <p>{app.description}</p>
+              <span className="related-tool-action">{app.action}</span>
+            </a>
+          ))}
+        </div>
+      </section>
       <section
         id="makers"
         className="makers-section"
         aria-labelledby="makers-title"
       >
-        <span className="eyebrow">SMALL TOOLS. THOUGHTFULLY BUILT.</span>
-        <h2 id="makers-title">Meet the makers.</h2>
+        <span className="eyebrow">BEHIND THE MAGIC</span>
+        <h2 id="makers-title">Human-made. Number-obsessed.</h2>
         <p>
           Mathmagician is part of{' '}
           <a href="https://lowkey.tools">Lowkey Tools</a>, built by{' '}
@@ -112,6 +141,17 @@ export default function GameGuide() {
             <span className="maker-link">Meet Shrinath at shrinath.me →</span>
           </a>
         </div>
+        <p className="maker-follow">
+          Curious about what’s brewing next?{' '}
+          <a
+            href={SITE.creator.social}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Follow @shrinath_prabhu on X
+          </a>
+          .
+        </p>
       </section>
     </div>
   );

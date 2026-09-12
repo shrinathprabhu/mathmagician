@@ -3,18 +3,16 @@ import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import sitesWorker from '../dist/server/index.js';
-import { getBasePath } from '../lib/base-path.mjs';
 import {
   parseHeaders,
   headersForPath,
   renderHeaders,
 } from '../scripts/hosting-policy.mjs';
 
-const base = getBasePath();
 const output = 'dist/client';
 const raw = await readFile(`${output}/_headers`, 'utf8');
 const rules = parseHeaders(raw);
-const headers = (path) => headersForPath(rules, `${base}${path}`);
+const headers = (path) => headersForPath(rules, path);
 
 void test('every app response has security headers while clipboard and sharing remain permitted', () => {
   for (const path of [
@@ -40,12 +38,6 @@ void test('every app response has security headers while clipboard and sharing r
     assert.match(response['Content-Security-Policy'], /frame-ancestors 'none'/);
     assert.match(response['Content-Security-Policy'], /object-src 'none'/);
   }
-  if (base)
-    assert.deepEqual(
-      headers(''),
-      headers('/'),
-      'Both homepage addresses get the same protection',
-    );
   assert.ok(raw.split('\n').every((line) => Buffer.byteLength(line) <= 2000));
   assert.ok(rules.length <= 100);
   assert.throws(
@@ -83,7 +75,7 @@ void test('CSP authorizes every exported inline script without allowing arbitrar
     const src = attrs.match(/\bsrc="([^"]+)"/);
     if (src) {
       assert.ok(
-        src[1].startsWith(`${base}/_next/static/`),
+        src[1].startsWith('/_next/static/'),
         `Unexpected script origin: ${src[1]}`,
       );
       continue;
@@ -129,7 +121,11 @@ void test('cache policies keep mutable files fresh, hashed assets immutable, and
       'public, max-age=31536000, immutable',
       path,
     );
-  for (const path of ['/mathmagician.svg', '/icons/mathmagician-192.png'])
+  for (const path of [
+    '/mathmagician.svg',
+    '/icons/mathmagician-192.png',
+    '/og.jpg',
+  ])
     assert.equal(
       headers(path)['Cache-Control'],
       'public, max-age=86400, must-revalidate',
@@ -144,7 +140,8 @@ void test('cache policies keep mutable files fresh, hashed assets immutable, and
     headers('/manifest.webmanifest')['Content-Type'],
     'application/manifest+json',
   );
-  assert.equal(headers('/sw.js')['Service-Worker-Allowed'], `${base}/`);
+  assert.equal(headers('/sw.js')['Service-Worker-Allowed'], '/');
+  assert.equal(headers('/og.jpg')['Content-Type'], 'image/jpeg');
 });
 
 void test('build metadata is excluded from public files and the offline precache', async () => {
@@ -169,7 +166,7 @@ void test('Sites adapter enforces the same headers, preserves conditional respon
   const precache = JSON.parse(sw.match(/const ASSETS = (\[[^\n]+\]);/)[1]);
   for (const path of [...precache.map((file) => file.slice(1)), '/sw.js']) {
     const response = sitesWorker.fetch(
-      new Request(`https://example.com${base}${path}`),
+      new Request(`https://example.com${path}`),
     );
     // Cache.addAll rejects the entire installation if any precached file is not 2xx.
     assert.equal(response.status, 200, `Precache must succeed: ${path}`);
@@ -187,26 +184,27 @@ void test('Sites adapter enforces the same headers, preserves conditional respon
   }
   assert.ok(etag);
   const conditional = sitesWorker.fetch(
-    new Request(`https://example.com${base}/`, {
+    new Request(`https://example.com/`, {
       headers: { 'If-None-Match': `"unrelated", W/${etag}` },
     }),
   );
   assert.equal(conditional.status, 304);
   assert.equal(conditional.headers.get('Cache-Control'), 'no-cache');
   const head = sitesWorker.fetch(
-    new Request(`https://example.com${base}/`, { method: 'HEAD' }),
+    new Request(`https://example.com/`, { method: 'HEAD' }),
   );
   assert.equal(head.status, 200);
   assert.equal(await head.text(), '');
   assert.equal(head.headers.get('etag'), etag);
   for (const path of [
     '/unknown',
+    '/mathmagician/',
     '/_headers',
     '/hosting-policy.json',
     '/_next/static/missing.js',
   ]) {
     const response = sitesWorker.fetch(
-      new Request(`https://example.com${base}${path}`),
+      new Request(`https://example.com${path}`),
     );
     assert.equal(response.status, 404);
     assert.equal(response.headers.get('Cache-Control'), 'no-store');
@@ -218,7 +216,7 @@ void test('Sites adapter enforces the same headers, preserves conditional respon
     assert.doesNotMatch(await response.text(), /<script\b/i);
   }
   const post = sitesWorker.fetch(
-    new Request(`https://example.com${base}/`, { method: 'POST' }),
+    new Request(`https://example.com/`, { method: 'POST' }),
   );
   assert.equal(post.status, 405);
   assert.equal(post.headers.get('Allow'), 'GET, HEAD');

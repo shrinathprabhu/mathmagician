@@ -7,9 +7,31 @@ export const SITE = {
     'Play a free mental math game with four difficulty modes. Solve arithmetic in 10–120 seconds, track your speed, and share your score. Install and play offline.',
   summary:
     'Mathmagician is a free timed mental math game by Lowkey Tools. Practice addition, subtraction, multiplication, and division in 10-second to 2-minute rounds, then review your speed and share your score.',
-  creator: { name: 'Shrinath Prabhu', url: 'https://shrinath.me' },
-  publisher: { name: 'OwlEye', url: 'https://owleye.dev' },
+  image: {
+    url: `${APP_URL}/og.jpg`,
+    width: 1732,
+    height: 908,
+    alt: 'Mathmagician. Fast math. Sharp mind. How many can you solve in 30 seconds?',
+  },
+  creator: {
+    name: 'Shrinath Prabhu',
+    url: 'https://shrinath.me',
+    social: 'https://x.com/shrinath_prabhu',
+  },
+  publisher: { name: 'OwlEye Analytics', url: 'https://owleye.dev' },
 } as const;
+
+export const RELATED_APPS = [
+  {
+    name: 'SuperSplit',
+    url: 'https://supersplit.lowkey.tools',
+    cue: 'DIVISION, WITH FRIENDS',
+    title: 'A fair split for the whole table.',
+    description:
+      'Put the mental maths down after dinner. SuperSplit tracks who paid, splits group expenses, and works out who owes whom.',
+    action: 'Let SuperSplit handle the bill',
+  },
+] as const;
 
 export const HOW_TO_PLAY = [
   'Choose Kids, Adult, Legendary, or God mode to set the operand range.',
@@ -73,6 +95,7 @@ export const STRUCTURED_DATA = {
       '@id': `${SITE.creator.url}/#person`,
       name: SITE.creator.name,
       url: SITE.creator.url,
+      sameAs: [SITE.creator.social],
     },
     {
       '@type': 'Organization',
@@ -92,6 +115,7 @@ export const STRUCTURED_DATA = {
       '@id': `${APP_URL}#app`,
       name: 'Mathmagician',
       url: APP_URL,
+      image: SITE.image.url,
       description: SITE.summary,
       applicationCategory: 'GameApplication',
       applicationSubCategory: 'Mental math practice',
@@ -117,6 +141,13 @@ export const STRUCTURED_DATA = {
       url: APP_URL,
       name: SITE.title,
       description: SITE.description,
+      primaryImageOfPage: {
+        '@type': 'ImageObject',
+        url: SITE.image.url,
+        width: SITE.image.width,
+        height: SITE.image.height,
+        caption: SITE.image.alt,
+      },
       inLanguage: 'en',
       isPartOf: { '@id': 'https://lowkey.tools/#website' },
       mainEntity: { '@id': `${APP_URL}#app` },

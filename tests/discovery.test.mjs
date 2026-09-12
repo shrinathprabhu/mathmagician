@@ -2,11 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, access, readdir } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
-import { SITE, FAQS } from '../lib/site-content.ts';
-import { getBasePath } from '../lib/base-path.mjs';
+import { SITE, FAQS, RELATED_APPS } from '../lib/site-content.ts';
 
 const output = 'dist/client';
-const base = getBasePath();
 const html = await readFile(`${output}/index.html`, 'utf8');
 const plain = (s) =>
   s
@@ -58,9 +56,36 @@ void test('canonical identity, connected JSON-LD, and FAQs agree with the static
     );
     assert.ok(anchors.every(([tag]) => !tag.includes('nofollow')));
   }
+  for (const url of [
+    SITE.creator.social,
+    'https://lowkey.tools',
+    ...RELATED_APPS.map((app) => app.url),
+  ])
+    assert.ok(html.includes(`href="${url}"`), `Visible backlink: ${url}`);
+  assert.deepEqual(graph.find((node) => node['@type'] === 'Person').sameAs, [
+    SITE.creator.social,
+  ]);
+  assert.equal(RELATED_APPS.length, 1);
+  assert.equal(
+    graph.find((node) => node['@type'] === 'WebApplication').image,
+    SITE.image.url,
+  );
+  assert.equal(
+    graph.find((node) => node['@type'] === 'WebPage').primaryImageOfPage.url,
+    SITE.image.url,
+  );
+  assert.ok(html.includes(`property="og:image" content="${SITE.image.url}"`));
+  assert.ok(
+    html.includes(`property="og:image:width" content="${SITE.image.width}"`),
+  );
+  assert.ok(
+    html.includes(`property="og:image:height" content="${SITE.image.height}"`),
+  );
+  assert.ok(html.includes(`name="twitter:image" content="${SITE.image.url}"`));
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
 });
 
-void test('crawler files, Markdown discovery, and asset paths support the selected deployment mount', async () => {
+void test('crawler files, Markdown discovery, and asset paths use the standalone subdomain root', async () => {
   const [robots, sitemap, llms, markdown, headers] = await Promise.all(
     ['robots.txt', 'sitemap.xml', 'llms.txt', 'index.md', '_headers'].map(
       (name) => readFile(`${output}/${name}`, 'utf8'),
@@ -75,25 +100,29 @@ void test('crawler files, Markdown discovery, and asset paths support the select
   for (const answer of FAQS) assert.ok(markdown.includes(answer.answer));
   assert.ok(html.includes(`href="${SITE.url}/llms.txt"`));
   assert.ok(html.includes(`href="${SITE.url}/index.md"`));
-  assert.ok(html.includes(`href="${base}/manifest.webmanifest"`));
-  assert.ok(html.includes(`href="${base}/mathmagician.svg"`));
+  assert.ok(html.includes('href="/manifest.webmanifest"'));
+  assert.ok(html.includes('href="/mathmagician.svg"'));
   assert.ok(
     headers.includes(
-      `${base}/_next/static/*\n  Cache-Control: public, max-age=31536000, immutable`,
+      '/_next/static/*\n  Cache-Control: public, max-age=31536000, immutable',
     ),
   );
   for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
     const url = match[1];
-    if (url.startsWith(`${base}/_next/`))
-      await access(`${output}/${url.slice(base.length + 1)}`);
-    if (base)
-      assert.ok(
-        !url.startsWith('/_next/'),
-        'No root-only asset references in a subpath build',
-      );
+    if (url.startsWith('/_next/')) await access(`${output}${url}`);
+    assert.ok(
+      !url.startsWith('/mathmagician/'),
+      'No obsolete subpath asset references',
+    );
   }
   for (const doc of [html, robots, sitemap, llms, markdown])
-    assert.ok(!doc.includes('mathmagician.lowkey.tools'));
+    assert.ok(!doc.includes('lowkey.tools/mathmagician'));
+  assert.equal(SITE.url, 'https://mathmagician.lowkey.tools');
+  const socialImage = await readFile(`${output}/og.jpg`);
+  assert.equal(socialImage.subarray(0, 3).toString('hex'), 'ffd8ff');
+  assert.ok(socialImage.length < 400_000, 'Social image stays below 400 kB');
+  for (const app of RELATED_APPS)
+    assert.ok(llms.includes(app.url) && markdown.includes(app.url));
 });
 
 void test('stylesheet budget excludes unused starter components', async () => {

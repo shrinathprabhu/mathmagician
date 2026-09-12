@@ -1822,7 +1822,9 @@ h1 span {
   color: #b3a3c1;
 }
 .creator-credit {
-  line-height: 1.8;
+  display: grid;
+  font-size: 14px;
+  line-height: 1.65;
 }
 .creator-credit a {
   color: #d0b6ec;
@@ -2016,7 +2018,7 @@ body {
   line-height: 1.75;
   margin: 12px 0 0;
 }
-.game-guide a:not(.maker-card),
+.game-guide a:not(.maker-card):not(.related-tool-card),
 .maker-link {
   color: #d2b4f5;
   text-decoration: underline;
@@ -2145,6 +2147,74 @@ body {
   font-size: 14px;
   margin-top: auto;
 }
+.related-tools-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.related-tools-heading .eyebrow {
+  display: block;
+  margin-bottom: 16px;
+}
+.related-tools-heading h2 {
+  margin-bottom: 0;
+}
+.collection-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+}
+.related-tools-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 24px;
+}
+.related-tool-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid #4c3d59;
+  border-radius: 14px;
+  background: #231d2b;
+  color: #eee5f8;
+  text-decoration: none;
+}
+.related-tool-card:hover {
+  background: #2e2338;
+  border-color: #aa87ca;
+}
+.related-tool-card .eyebrow {
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+}
+.related-tool-card h3 {
+  font-size: 22px;
+  line-height: 1.35;
+  margin-bottom: 0;
+}
+.related-tool-card p {
+  margin-bottom: 24px;
+  max-width: 72ch;
+}
+.related-tool-action {
+  margin-top: auto;
+  color: #d2b4f5;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.related-tool-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
 .site-footer a,
 .footer-actions button {
   display: inline-flex;
@@ -2159,7 +2229,8 @@ body {
     padding-block: 28px;
   }
   .guide-intro,
-  .maker-grid {
+  .maker-grid,
+  .related-tools-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 26px;
   }
@@ -2170,7 +2241,8 @@ body {
   .guide-mode-grid > div {
     padding: 16px;
   }
-  .maker-card {
+  .maker-card,
+  .related-tool-card {
     padding: 22px;
   }
   .game-guide p,

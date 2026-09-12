@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { pathPattern, joinHeaders } from './hosting-policy.mjs';
 
-const { basePath, rules } = JSON.parse(
+const { rules } = JSON.parse(
   await readFile('dist/hosting-policy.json', 'utf8'),
 );
 async function files(dir, prefix = '') {
@@ -29,6 +29,7 @@ const types = {
   '.webmanifest': 'application/manifest+json',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
   '.xml': 'application/xml; charset=utf-8',
@@ -44,7 +45,6 @@ for (const file of assetFiles) {
   };
 }
 const worker = template
-  .replace('__BASE__', () => JSON.stringify(basePath))
   .replace('__RULES__', () =>
     JSON.stringify(
       rules.map((rule) => ({

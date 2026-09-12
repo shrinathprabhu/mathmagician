@@ -2,7 +2,7 @@
 
 > Mathmagician is a free timed mental math game by Lowkey Tools. Practice addition, subtraction, multiplication, and division in 10-second to 2-minute rounds, then review your speed and share your score.
 
-Canonical page: https://lowkey.tools/mathmagician
+Canonical page: https://mathmagician.lowkey.tools
 This Markdown document mirrors the public game guide and FAQ. The interactive game is at the canonical page.
 
 ## How to play
@@ -65,5 +65,10 @@ Mathmagician is part of Lowkey Tools, built by Shrinath Prabhu, from the makers 
 
 ## Makers and references
 Built by [Shrinath Prabhu](https://shrinath.me), from the makers of [OwlEye Analytics](https://owleye.dev), as part of [Lowkey Tools](https://lowkey.tools).
+
+[Follow @shrinath_prabhu on X](https://x.com/shrinath_prabhu) for more from the maker.
+
+## Beyond the scoreboard
+- [SuperSplit](https://supersplit.lowkey.tools): Put the mental maths down after dinner. SuperSplit tracks who paid, splits group expenses, and works out who owes whom.
 
 [Arithmetic research](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0168431) provides context for estimated practice targets, not population averages for this app.

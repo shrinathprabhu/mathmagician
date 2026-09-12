@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lowkey.tools/mathmagician/sitemap.xml
+Sitemap: https://mathmagician.lowkey.tools/sitemap.xml

@@ -2,10 +2,8 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
-import { getBasePath } from '../lib/base-path.mjs';
 import { parseHeaders, headersForPath } from './hosting-policy.mjs';
 const root = resolve('dist/client');
-const basePath = getBasePath();
 const rules = parseHeaders(await readFile(resolve(root, '_headers'), 'utf8'));
 const types = {
   '.html': 'text/html',
@@ -15,13 +13,14 @@ const types = {
   '.webmanifest': 'application/manifest+json',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain',
   '.xml': 'application/xml',
   '.md': 'text/markdown; charset=utf-8',
 };
 createServer(async (req, res) => {
-  let headers = headersForPath(rules, `${basePath}/`);
+  let headers = headersForPath(rules, '/');
   try {
     const url = new URL(req.url, 'http://localhost');
     const pathname = decodeURIComponent(url.pathname);
@@ -35,13 +34,7 @@ createServer(async (req, res) => {
       res.end();
       return;
     }
-    if (
-      basePath &&
-      pathname !== basePath &&
-      !pathname.startsWith(basePath + '/')
-    )
-      throw new Error('Outside app');
-    let path = resolve(root, '.' + (pathname.slice(basePath.length) || '/'));
+    let path = resolve(root, '.' + pathname);
     if (path !== root && !path.startsWith(root + sep))
       throw new Error('Outside app');
     if (
@@ -71,7 +64,5 @@ createServer(async (req, res) => {
     );
   }
 }).listen(Number(process.env.PORT || 4173), 'localhost', () =>
-  console.log(
-    `Mathmagician: http://localhost:${process.env.PORT || 4173}${basePath}/`,
-  ),
+  console.log(`Mathmagician: http://localhost:${process.env.PORT || 4173}/`),
 );

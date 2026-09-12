@@ -20,7 +20,7 @@ void test(
     assert.match(html, /<title>Mathmagician/);
     assert.match(
       html,
-      /rel="canonical" href="https:\/\/lowkey.tools\/mathmagician"/,
+      /rel="canonical" href="https:\/\/mathmagician.lowkey.tools"/,
     );
     assert.doesNotMatch(
       html,
@@ -40,7 +40,9 @@ void test(
       await readFile(`${output}/manifest.webmanifest`, 'utf8'),
     );
     assert.equal(manifest.display, 'standalone');
-    assert.equal(manifest.scope, './');
+    assert.equal(manifest.scope, '/');
+    assert.equal(manifest.start_url, '/');
+    assert.equal(manifest.id, '/');
     assert.ok(manifest.icons.some((i) => i.sizes === '192x192'));
     assert.ok(
       manifest.icons.some(
@@ -48,7 +50,7 @@ void test(
       ),
     );
     for (const icon of manifest.icons) {
-      const png = await readFile(resolve(output, icon.src));
+      const png = await readFile(resolve(output, '.' + icon.src));
       assert.equal(png.readUInt32BE(16), Number(icon.sizes.split('x')[0]));
     }
     for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
@@ -70,7 +72,7 @@ void test(
     let networkCalls = 0,
       claimed = false,
       cacheAssets = [];
-    const scope = 'https://example.test/mathmagician/';
+    const scope = 'https://mathmagician.example.test/';
     const keyOf = (r) => (typeof r === 'string' ? r : r.url);
     const caches = {
       async open(key) {
@@ -81,9 +83,8 @@ void test(
             cacheAssets = urls;
             for (const url of urls) {
               const rel =
-                decodeURIComponent(
-                  new URL(url).pathname.slice('/mathmagician/'.length),
-                ) || 'index.html';
+                decodeURIComponent(new URL(url).pathname.slice(1)) ||
+                'index.html';
               entries.set(url, await readFile(resolve(output, rel), 'utf8'));
             }
           },
@@ -100,7 +101,7 @@ void test(
       },
     };
     stored.set('another-app-v1', new Map());
-    stored.set('mathmagician-/mathmagician/-old', new Map());
+    stored.set('mathmagician-/-old', new Map());
     stored.set('mathmagician-/different/-old', new Map());
     const context = vm.createContext({
       URL,
@@ -141,7 +142,7 @@ void test(
     assert.ok(claimed);
     assert.ok(stored.has('another-app-v1'));
     assert.ok(stored.has('mathmagician-/different/-old'));
-    assert.ok(!stored.has('mathmagician-/mathmagician/-old'));
+    assert.ok(!stored.has('mathmagician-/-old'));
     listeners.fetch({
       request: {
         url: scope + '?source=installed',
