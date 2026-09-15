@@ -11,17 +11,25 @@ Create a **Worker**, connect its Git repository, and set these values under **Se
 | Worker name                          | `mathmagician` (must match the Wrangler configuration)            |
 | Production branch                    | `main`                                                            |
 | Root directory                       | Repository root                                                   |
-| Build command                        | `npm ci && npm run build:workers`                                 |
-| Deploy command                       | `npx wrangler deploy --config cloudflare/wrangler.jsonc`          |
+| Build command                        | `npm ci --include=dev && npm run build:workers`                   |
+| Deploy command                       | `npm run deploy`                                                  |
 | Non-production branch deploy command | `npx wrangler versions upload --config cloudflare/wrangler.jsonc` |
 | Build variable                       | `SKIP_DEPENDENCY_INSTALL=1`                                       |
 | Node.js                              | `24`, selected by `.node-version`                                 |
 
-The explicit `npm ci` installs the checked-in lockfile; the build variable disables a duplicate automatic install. Set any existing dashboard `NODE_VERSION` override to `24`. Workers Builds uses build and deploy commands; there is no Pages framework preset or build-output-directory setting to enter. The asset directory comes from Wrangler. Non-production uploads create versions without promoting them to production; the configuration explicitly enables Preview URLs and the `workers.dev` hostname.
+The explicit `npm ci --include=dev` installs the checked-in lockfile and build tools, including Tailwind, even if the build environment sets `NODE_ENV=production`; the build variable disables a duplicate automatic install. Set any existing dashboard `NODE_VERSION` override to `24`. Workers Builds uses build and deploy commands; there is no Pages framework preset or build-output-directory setting to enter. The asset directory comes from Wrangler. Non-production uploads create versions without promoting them to production; the configuration explicitly enables Preview URLs and the `workers.dev` hostname.
 
 All Wrangler commands explicitly select the nested configuration. Its `../dist/client` path resolves relative to `cloudflare/wrangler.jsonc`. Keeping the configuration outside the repository root prevents Vinext from switching this static export into its server-side Workers build path. Keep build commands at the repository root. The compatibility date is pinned to `2026-09-10`, supported by the checked-in Wrangler version's local runtime.
 
 References: [Workers Builds configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/), [build image and Node version](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/), [Static Assets configuration](https://developers.cloudflare.com/workers/static-assets/binding/).
+
+## Troubleshooting automatic framework setup
+
+Use the deploy command above, not a bare `npx wrangler deploy` from the repository root. Wrangler can automatically configure a framework when it does not find a root configuration; this project intentionally keeps its configuration at `cloudflare/wrangler.jsonc`. Automatic setup can select a different build path or generate a new Vite configuration. See [Cloudflare automatic configuration](https://developers.cloudflare.com/workers/framework-guides/automatic-configuration/).
+
+A log saying `Running custom build npm run build` during the deploy step does not match this repository's deployment configuration: the checked-in Wrangler file has no custom build command. Check that the build uses the current commit, the root directory is the repository root, and the deploy command is `npm run deploy` (or `npx wrangler deploy --config cloudflare/wrangler.jsonc`). Set the non-production branch command to the explicit `versions upload --config` command in the table too.
+
+If CSS fails trying to open `<repo>/tailwindcss`, verify that `npm ci --include=dev` ran successfully. Tailwind is configured in the root `postcss.config.mjs`, which Vite loads automatically. Keep that file in the deployment commit; there is no separate file named `tailwindcss` to create in the repository root.
 
 ## Local build and preview
 
@@ -50,7 +58,7 @@ npx wrangler login
 npm run deploy:workers
 ```
 
-The command builds first, then runs `wrangler deploy` with the nested configuration. For non-production versions, build and use `npx wrangler versions upload --config cloudflare/wrangler.jsonc` instead. Do not use `deploy:workers` as the dashboard deploy command after its build step, since that would build twice.
+The command builds first, then runs `wrangler deploy` with the nested configuration. For non-production versions, build and use `npx wrangler versions upload --config cloudflare/wrangler.jsonc` instead. Use `npm run deploy` as the dashboard deploy command after its build step; it selects the checked-in configuration without rebuilding. `deploy:workers` includes a build for use from a local checkout.
 
 ## Production hostname
 
@@ -58,9 +66,7 @@ The checked-in Wrangler configuration declares the domain:
 
 ```json
 {
-  "routes": [
-    { "pattern": "mathmagician.lowkey.tools", "custom_domain": true }
-  ]
+  "routes": [{ "pattern": "mathmagician.lowkey.tools", "custom_domain": true }]
 }
 ```
 

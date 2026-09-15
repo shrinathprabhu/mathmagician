@@ -1834,6 +1834,9 @@ h1 span {
 .creator-credit a:hover {
   color: #eee0fc;
 }
+.creator-credit .source-link {
+  gap: 6px;
+}
 .footer-actions {
   flex-wrap: wrap;
   justify-content: flex-end;

@@ -10,13 +10,14 @@
     "build": "npm run build:static && node scripts/build-sites.mjs",
     "build:static": "node scripts/build-discovery.mjs && vinext build && node scripts/build-pwa.mjs",
     "start": "node scripts/serve.mjs",
-    "lint": "oxlint app components/game lib scripts tests cloudflare next.config.ts vite.config.ts",
+    "lint": "oxlint app components/game lib scripts tests cloudflare next.config.ts vite.config.ts postcss.config.mjs",
     "format": "oxfmt",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "build:workers": "npm run build:static",
+    "deploy": "wrangler deploy --config cloudflare/wrangler.jsonc",
     "preview:workers": "wrangler dev --config cloudflare/wrangler.jsonc",
-    "deploy:workers": "npm run build:workers && wrangler deploy --config cloudflare/wrangler.jsonc"
+    "deploy:workers": "npm run build:workers && npm run deploy"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

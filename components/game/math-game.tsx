@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   ArrowRight,
+  ArrowUpRight,
   Check,
   Clock3,
   Keyboard,
@@ -1027,6 +1028,17 @@ export default function MathGame({ children }: { children: ReactNode }) {
               Shrinath Prabhu
             </a>
             .
+          </span>
+          <span>
+            <a
+              className="source-link"
+              href="https://github.com/shrinathprabhu/mathmagician"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Source on GitHub
+              <ArrowUpRight size={14} aria-hidden="true" />
+            </a>
           </span>
         </span>
         <div className="footer-actions">
