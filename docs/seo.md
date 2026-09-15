@@ -6,7 +6,7 @@ The canonical URL is **https://mathmagician.lowkey.tools/**. The Sites deploymen
 
 - One canonical URL across HTML, Open Graph, sharing, sitemap, JSON-LD, and Markdown documents.
 - Descriptive title and description, authorship, Open Graph/X metadata, language, and index/follow directives.
-- A matching 1732 × 908 social card at `/og.jpg` (about 242 kB), with an absolute canonical image URL, alt text, dimensions, X large-image metadata, and JSON-LD image references. The image uses a one-day revalidated cache policy.
+- A matching 1732 × 908 social card with only “by @shrinath_prabhu” as its credit at `/og.jpg` (about 247 kB), with an absolute canonical image URL, alt text, dimensions, X large-image metadata, and JSON-LD image references. The image uses a one-day revalidated cache policy.
 - Static HTML instructions, mode descriptions, example arithmetic, scoring definitions, local-storage/offline limitations, and native FAQ disclosures. These remain readable without JavaScript; gameplay requires it.
 - A connected JSON-LD graph describing the WebApplication, WebPage, Lowkey Tools WebSite, breadcrumb, FAQPage, Shrinath Prabhu, and OwlEye. FAQ answers come from the same data as the visible page. No invented ratings, reviews, measured averages, or performance claims.
 - Sitemap, robots.txt, llms.txt, and an alternate Markdown guide at `index.md`. Discovery links appear in the document head. The Markdown copy gets an HTTP `noindex` header to avoid competing with the interactive canonical page; it is still publicly fetchable.
@@ -20,11 +20,10 @@ The canonical URL is **https://mathmagician.lowkey.tools/**. The Sites deploymen
 
 ```sh
 npm ci
-npm run build:vercel
-npm test
+npm run build:workers
 ```
 
-Attach **mathmagician.lowkey.tools** to this Vercel project. The generated `.vercel/output/static/` files are served from the domain root. The manifest lives at `/manifest.webmanifest`, the service worker at `/sw.js` with scope `/`, and scripts/styles/fonts at `/_next/static/`. No proxy rewrite, base-path environment variable, or merge into another app’s deployment is required. See [security and caching](security.md) for the generated Vercel rules.
+The Wrangler configuration declares **mathmagician.lowkey.tools** as a Workers custom domain; a production deployment applies that association. The generated `dist/client/` files are served from the domain root. The manifest lives at `/manifest.webmanifest`, the service worker at `/sw.js` with scope `/`, and scripts/styles/fonts at `/_next/static/`. No proxy rewrite, base-path environment variable, or merge into another app’s deployment is required. See [Workers deployment settings](cloudflare-workers.md) and [security and caching](security.md).
 
 The generated discovery endpoints are:
 

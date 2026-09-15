@@ -6,6 +6,8 @@ A frontend-only, installable mental math sprint app. Game state and personal rec
 
 Use Node 22.18+ or 24+ for built-in TypeScript test support.
 
+`.node-version` selects Node 24 for Cloudflare Workers Builds and compatible local version managers.
+
 ```sh
 npm ci
 npm run dev
@@ -40,13 +42,15 @@ All app, social-share, Open Graph, canonical, footer, and sitemap references use
 
 ## PWA and deployment
 
-The social preview at `public/og.jpg` is a 1732 × 908 JPEG (about 242 kB) using the app’s wand branding. Open Graph, X large-image cards, and JSON-LD reference the same absolute image URL on the canonical host.
+The social preview at `public/og.jpg` is a 1732 × 908 JPEG (about 247 kB) using the app’s wand branding and a single “by @shrinath_prabhu” credit. Open Graph, X large-image cards, and JSON-LD reference the same absolute image URL on the canonical host.
 
 The favicon and header share `public/mathmagician.svg`. The manifest’s 192/512 icons, maskable icon, and Apple touch icon are size exports of that same wand artwork. Geist Sans powers the interface; Geist Mono powers calculations, timers, and scores. Both variable WOFF2 fonts are self-hosted, preloaded, and included in the offline cache. No runtime third-party font or CDN requests are required. Open once online to precache; then the game works offline. Updates activate after old tabs close so HTML and its hashed assets stay on one version.
 
-The production build targets **mathmagician.lowkey.tools** directly. All builds use the domain root for scripts, styles, icons, the manifest, and the service worker. Run `npm run build:vercel` for the native Vercel bundle, and attach that hostname to the Vercel project. No proxy or path-prefix deployment is needed. `npm start` previews the same root layout locally. The existing Sites preview uses its own hostname with the same root paths.
+The production build targets **mathmagician.lowkey.tools** directly. All builds use the domain root for scripts, styles, icons, the manifest, and the service worker. Use Workers Static Assets for production. The Wrangler configuration declares `mathmagician.lowkey.tools` as a custom domain. No proxy or path-prefix deployment is needed. `npm start` previews the same root layout locally. The existing Sites preview uses its own hostname with the same root paths.
 
-Security headers include a build-specific script CSP, HSTS, framing/MIME protection, and restricted browser permissions. HTTP caching distinguishes immutable hashed assets from files that need revalidation. A small Sites hosting adapter applies these rules to its static asset responses; gameplay and storage remain in the browser. `vercel.json` runs `npm run build:vercel` to generate native static routes, matching headers, and real 404 responses. See [security, caching, and Vercel deployment](docs/security.md) for subdomain deployment and verification.
+Cloudflare Workers uses `cloudflare/wrangler.jsonc` to serve **`dist/client`** with native static-asset routing, security/cache headers, and offline assets. For Workers Builds, use build command `npm ci && npm run build:workers`, deploy command `npx wrangler deploy --config cloudflare/wrangler.jsonc`, and build variable `SKIP_DEPENDENCY_INSTALL=1`. `npm run preview:workers` runs the local Workers runtime; `npm run deploy:workers` builds and deploys from a local checkout. See [Cloudflare Workers settings, custom domain, and CLI deployment](docs/cloudflare-workers.md).
+
+Security headers include a build-specific script CSP, HSTS, framing/MIME protection, and restricted browser permissions. HTTP caching distinguishes immutable hashed assets from files that need revalidation. A small Sites hosting adapter applies these rules to its static asset responses; gameplay and storage remain in the browser. The Workers fallback keeps missing pages and assets as real 404 responses with `no-store` caching. See [security, caching, and Workers deployment](docs/security.md) for subdomain deployment and verification.
 
 ## Search and answer engines
 

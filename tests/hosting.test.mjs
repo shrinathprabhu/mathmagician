@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import sitesWorker from '../dist/server/index.js';
+import cloudflareWorker from '../cloudflare/worker.mjs';
 import {
   parseHeaders,
   headersForPath,
@@ -13,6 +14,46 @@ const output = 'dist/client';
 const raw = await readFile(`${output}/_headers`, 'utf8');
 const rules = parseHeaders(raw);
 const headers = (path) => headersForPath(rules, path);
+
+void test('Workers fallback prevents missing assets from inheriting immutable caching', async () => {
+  for (const method of ['GET', 'HEAD']) {
+    const request = new Request('https://example.com/_next/static/missing.js', {
+      method,
+    });
+    const response = await cloudflareWorker.fetch(request, {
+      ASSETS: {
+        fetch(forwarded) {
+          assert.equal(forwarded, request);
+          return new Response(method === 'HEAD' ? null : 'Not found', {
+            status: 404,
+            headers: {
+              ...headers('/_next/static/missing.js'),
+              'Content-Type': 'text/html',
+            },
+          });
+        },
+      },
+    });
+    assert.equal(response.status, 404);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    assert.equal(response.headers.get('X-Robots-Tag'), 'noindex');
+    assert.equal(
+      response.headers.get('Content-Security-Policy'),
+      headers('/')['Content-Security-Policy'],
+    );
+    assert.equal(await response.text(), method === 'HEAD' ? '' : 'Not found');
+  }
+  const existing = new Response(null, {
+    status: 304,
+    headers: { ETag: '"asset"' },
+  });
+  assert.equal(
+    await cloudflareWorker.fetch(new Request('https://example.com/'), {
+      ASSETS: { fetch: () => existing },
+    }),
+    existing,
+  );
+});
 
 void test('every app response has security headers while clipboard and sharing remain permitted', () => {
   for (const path of [
@@ -135,6 +176,8 @@ void test('cache policies keep mutable files fresh, hashed assets immutable, and
     assert.equal(headers(path)['Cache-Control'], 'public, max-age=3600', path);
   assert.equal(headers('/404.html')['Cache-Control'], 'no-store');
   assert.equal(headers('/404.html')['X-Robots-Tag'], 'noindex');
+  assert.equal(headers('/404')['Cache-Control'], 'no-store');
+  assert.equal(headers('/404')['X-Robots-Tag'], 'noindex');
   assert.equal(headers('/index.md')['X-Robots-Tag'], 'noindex');
   assert.equal(
     headers('/manifest.webmanifest')['Content-Type'],

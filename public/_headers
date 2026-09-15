@@ -15,6 +15,9 @@
 /404.html
   Cache-Control: no-store
   X-Robots-Tag: noindex
+/404
+  Cache-Control: no-store
+  X-Robots-Tag: noindex
 /icons/*
   Cache-Control: public, max-age=86400, must-revalidate
 /mathmagician.svg

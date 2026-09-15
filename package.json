@@ -7,13 +7,16 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "node scripts/build-discovery.mjs && vinext build && node scripts/build-pwa.mjs && node scripts/build-sites.mjs",
+    "build": "npm run build:static && node scripts/build-sites.mjs",
+    "build:static": "node scripts/build-discovery.mjs && vinext build && node scripts/build-pwa.mjs",
     "start": "node scripts/serve.mjs",
-    "lint": "oxlint app components/game lib scripts tests next.config.ts vite.config.ts",
+    "lint": "oxlint app components/game lib scripts tests cloudflare next.config.ts vite.config.ts",
     "format": "oxfmt",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "build:vercel": "npm run build && node scripts/build-vercel.mjs"
+    "build:workers": "npm run build:static",
+    "preview:workers": "wrangler dev --config cloudflare/wrangler.jsonc",
+    "deploy:workers": "npm run build:workers && wrangler deploy --config cloudflare/wrangler.jsonc"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

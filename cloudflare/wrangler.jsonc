@@ -1,0 +1,21 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "mathmagician",
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "mathmagician.lowkey.tools", "custom_domain": true },
+  ],
+  "main": "./worker.mjs",
+  "assets": {
+    "directory": "../dist/client",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+  },
+  "compatibility_date": "2026-09-10",
+  // Let missing navigations reach the fallback so their cache headers are fixed.
+  // Existing assets still use the default asset-first serving path.
+  "compatibility_flags": ["assets_navigation_has_no_effect"],
+  "send_metrics": false,
+}

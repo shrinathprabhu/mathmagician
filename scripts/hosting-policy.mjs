@@ -1,5 +1,5 @@
-// The same parsed rules drive Cloudflare/Sites, the local HTTP preview, and
-// Vercel's Build Output API. Duplicate CSP headers are separate policies;
+// The same parsed rules drive Cloudflare/Sites and the local HTTP preview.
+// Duplicate CSP headers are separate policies;
 // browsers enforce their intersection, including when joined with a comma.
 export function parseHeaders(source) {
   const rules = [];

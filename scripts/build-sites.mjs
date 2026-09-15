@@ -60,7 +60,7 @@ if (gzipSync(worker).length > 3_000_000)
   );
 // Sites serves uploaded assets before Workers, bypassing response headers.
 // Its dedicated archive therefore embeds these small static files in one
-// portable Worker. Vercel and ordinary static hosts use dist/client directly.
+// portable Worker. Cloudflare Workers uses dist/client as native static assets.
 await rm('dist/server', { recursive: true, force: true });
 await mkdir('dist/server', { recursive: true });
 await writeFile('dist/server/index.js', worker);
