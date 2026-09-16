@@ -8,7 +8,8 @@ const geistSans = localFont({
   variable: '--font-geist-sans',
   weight: '100 900',
   style: 'normal',
-  display: 'swap',
+  // Use the preloaded Geist face when ready; avoid a late layout-changing swap.
+  display: 'optional',
   fallback: ['Arial', 'sans-serif'],
 });
 const geistMono = localFont({
@@ -16,7 +17,8 @@ const geistMono = localFont({
   variable: '--font-geist-mono',
   weight: '100 900',
   style: 'normal',
-  display: 'swap',
+  // Use the preloaded Geist face when ready; avoid a late layout-changing swap.
+  display: 'optional',
   fallback: ['Consolas', 'monospace'],
 });
 

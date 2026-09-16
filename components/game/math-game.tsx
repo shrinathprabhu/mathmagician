@@ -18,14 +18,12 @@ import {
   Sparkles,
   Trophy,
   Zap,
-  CornerDownLeft,
   RotateCcw,
   Share2,
   Copy,
   Download,
   CircleHelp,
   Flame,
-  SkipForward,
   X,
   CheckCheck,
   WifiOff,
@@ -40,13 +38,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { CountdownClock, RoundClock, QuestionClock } from './round-clock';
+import { AnswerEntry, type AnswerFeedback } from './answer-entry';
 import {
   MODES,
   LEVELS,
   getLevel,
   targetScore,
   comparisonText,
-  isAnswerInput,
   BENCHMARK_SOURCE,
   type LevelId,
   DURATIONS,
@@ -94,13 +92,7 @@ export default function MathGame({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [round, setRound] = useState<Round | null>(null);
   const roundRef = useRef<Round | null>(null);
-  const [answer, setAnswer] = useState('');
-  const answerRef = useRef('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [feedback, setFeedback] = useState<{
-    text: string;
-    correct: boolean;
-  } | null>(null);
+  const [feedback, setFeedback] = useState<AnswerFeedback>(null);
   const [history, setHistory] = useState<Result[]>([]);
   const [legacyHistory, setLegacyHistory] = useState<LegacyResult[]>([]);
   const [bests, setBests] = useState<Result[]>([]);
@@ -108,6 +100,7 @@ export default function MathGame({ children }: { children: ReactNode }) {
   const [newBest, setNewBest] = useState(false);
   const [toast, setToast] = useState('');
   const [copied, setCopied] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [offline, setOffline] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(
@@ -138,10 +131,6 @@ export default function MathGame({ children }: { children: ReactNode }) {
       Math.max(performance.now() - clock.mono, Date.now() - clock.wall)
     );
   }, []);
-  const updateAnswer = useCallback((value: string) => {
-    answerRef.current = value;
-    setAnswer(value);
-  }, []);
   const commit = useCallback((next: Round) => {
     roundRef.current = next;
     setRound(next);
@@ -157,18 +146,49 @@ export default function MathGame({ children }: { children: ReactNode }) {
     setHistory(h);
     setBests(b);
     setResult(r);
-    try {
-      localStorage.setItem(`${STORAGE}.history`, JSON.stringify(h));
-      localStorage.setItem(`${STORAGE}.bests`, JSON.stringify(b));
-    } catch {
-      setToast(
-        'This browser couldn’t save your score. You can still share it.',
-      );
-    }
     requestAnimationFrame(() =>
       resultRef.current?.focus({ preventScroll: true }),
     );
   }, []);
+
+  useEffect(() => {
+    if (!result) return;
+    let saved = false;
+    const persist = () => {
+      if (saved) return;
+      saved = true;
+      try {
+        const records = recordsRef.current;
+        localStorage.setItem(
+          `${STORAGE}.history`,
+          JSON.stringify(records.history),
+        );
+        localStorage.setItem(`${STORAGE}.bests`, JSON.stringify(records.bests));
+      } catch {
+        setToast(
+          'This browser couldn’t save your score. You can still share it.',
+        );
+      }
+    };
+    // Paint the result before optional storage work. Flush on navigation or a
+    // replay too, so leaving before the idle callback does not lose a score.
+    const supportsIdle = typeof window.requestIdleCallback === 'function';
+    const task = supportsIdle
+      ? window.requestIdleCallback(persist, { timeout: 1000 })
+      : window.setTimeout(persist, 0);
+    const onVisibilityChange = () => {
+      if (document.hidden) persist();
+    };
+    window.addEventListener('pagehide', persist);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      if (supportsIdle) window.cancelIdleCallback(task);
+      else window.clearTimeout(task);
+      window.removeEventListener('pagehide', persist);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      persist();
+    };
+  }, [result]);
 
   useEffect(() => {
     let cancelled = false;
@@ -258,21 +278,21 @@ export default function MathGame({ children }: { children: ReactNode }) {
     resultSaved.current = false;
     setResult(null);
     setFeedback(null);
-    updateAnswer('');
     setCopied(false);
+    setReviewOpen(false);
     setNewBest(false);
     commit(startRound(configRef.current, time));
     requestAnimationFrame(() => {
       arenaRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
       arenaRef.current?.focus({ preventScroll: true });
     });
-  }, [commit, gameNow, updateAnswer]);
+  }, [commit, gameNow]);
   const submit = useCallback(
-    (skip = false) => {
+    (answer: string | null) => {
       const current = roundRef.current;
       if (!current) return;
       const time = gameNow();
-      const next = submitAnswer(current, skip ? null : answerRef.current, time);
+      const next = submitAnswer(current, answer, time);
       commit(next);
       if (next.attempts.length > current.attempts.length) {
         const last = next.attempts[next.attempts.length - 1];
@@ -280,13 +300,11 @@ export default function MathGame({ children }: { children: ReactNode }) {
           correct: last.correct,
           text: last.correct
             ? `${last.question.expression} = ${last.question.answer} · ${(last.elapsedMs / 1000).toFixed(2)}s · Nice!`
-            : `${skip ? 'Skipped' : 'Not quite'}: ${last.question.expression} = ${last.question.answer} · ${(last.elapsedMs / 1000).toFixed(2)}s`,
+            : `${answer === null ? 'Skipped' : 'Not quite'}: ${last.question.expression} = ${last.question.answer} · ${(last.elapsedMs / 1000).toFixed(2)}s`,
         });
-        updateAnswer('');
-        inputRef.current?.focus({ preventScroll: true });
       }
     },
-    [commit, gameNow, updateAnswer],
+    [commit, gameNow],
   );
   useEffect(() => {
     if (!isActive) return;
@@ -313,10 +331,6 @@ export default function MathGame({ children }: { children: ReactNode }) {
       window.removeEventListener('focus', tick);
     };
   }, [isActive, commit, gameNow]);
-  useEffect(() => {
-    if (round?.phase === 'playing')
-      inputRef.current?.focus({ preventScroll: true });
-  }, [round?.phase]);
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(''), 5000);
@@ -453,16 +467,18 @@ export default function MathGame({ children }: { children: ReactNode }) {
           mathmagician<span className="brand-dot">.</span>
         </Link>
         <div className="header-links">
-          {!installed && (
-            <button
-              className="quiet-button install-button"
-              onClick={install}
-              disabled={isActive}
-            >
-              <Download size={15} />
-              <span>Install app</span>
-            </button>
-          )}
+          <span className="install-slot">
+            {!installed && (
+              <button
+                className="quiet-button install-button"
+                onClick={install}
+                disabled={isActive}
+              >
+                <Download size={15} />
+                <span>Install app</span>
+              </button>
+            )}
+          </span>
           <a
             className="lowkey-link"
             href="https://lowkey.tools"
@@ -704,105 +720,11 @@ export default function MathGame({ children }: { children: ReactNode }) {
                   endsAt={round.endsAt}
                   readNow={gameNow}
                 />
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    submit();
-                  }}
-                  className="answer-form"
-                >
-                  <label className="sr-only" htmlFor="answer">
-                    Your answer
-                  </label>
-                  <input
-                    id="answer"
-                    ref={inputRef}
-                    type="text"
-                    enterKeyHint="done"
-                    maxLength={14}
-                    autoComplete="off"
-                    spellCheck={false}
-                    inputMode="numeric"
-                    value={answer}
-                    onChange={(e) => {
-                      if (isAnswerInput(e.target.value, config.level))
-                        updateAnswer(e.target.value);
-                    }}
-                    onPaste={(e) => {
-                      e.preventDefault();
-                      const value = e.clipboardData.getData('text').trim();
-                      if (isAnswerInput(value, config.level, true))
-                        updateAnswer(value);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        updateAnswer('');
-                      }
-                      if (e.key === 'Enter' && e.repeat) e.preventDefault();
-                    }}
-                    placeholder="Your answer"
-                    aria-describedby="answer-hint"
-                  />
-                  {level.negatives && (
-                    <button
-                      type="button"
-                      className="sign-toggle"
-                      aria-label="Toggle negative answer"
-                      onPointerDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        updateAnswer(
-                          answer.startsWith('-')
-                            ? answer.slice(1)
-                            : `-${answer}`,
-                        );
-                        inputRef.current?.focus({ preventScroll: true });
-                      }}
-                    >
-                      ±
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    className="answer-submit"
-                    aria-label="Submit answer"
-                    disabled={!isAnswerInput(answer, config.level, true)}
-                  >
-                    <CornerDownLeft size={21} />
-                  </button>
-                </form>
-                <div
-                  className={`answer-feedback ${feedback ? (feedback.correct ? 'correct' : 'incorrect') : ''}`}
-                  aria-live="polite"
-                  id="answer-hint"
-                >
-                  {feedback ? (
-                    <>
-                      {feedback.correct ? <Check size={14} /> : <span>↳</span>}
-                      {feedback.text}
-                    </>
-                  ) : level.negatives ? (
-                    'Whole numbers only. Use ± for a negative answer.'
-                  ) : (
-                    'Whole numbers only. No negative answers in Kids mode.'
-                  )}
-                </div>
-                <div className="game-actions">
-                  <button className="quiet-button" onClick={() => submit(true)}>
-                    <SkipForward size={14} /> Skip
-                  </button>
-                  <span>Enter ↵ to submit</span>
-                  <button
-                    className="quiet-button"
-                    onClick={() => {
-                      updateAnswer('');
-                      inputRef.current?.focus({ preventScroll: true });
-                    }}
-                    aria-label="Clear answer"
-                  >
-                    Clear <X size={13} />
-                  </button>
-                </div>
+                <AnswerEntry
+                  levelId={config.level}
+                  feedback={feedback}
+                  onSubmit={submit}
+                />
               </div>
             )}
             {result && earned && (
@@ -902,75 +824,82 @@ export default function MathGame({ children }: { children: ReactNode }) {
                     WhatsApp ↗
                   </a>
                 </div>
-                <details className="result-details">
+                <details
+                  className="result-details"
+                  onToggle={(event) => setReviewOpen(event.currentTarget.open)}
+                >
                   <summary>Result text & round review</summary>
-                  <textarea
-                    aria-label="Shareable result text"
-                    readOnly
-                    value={shareText(result)}
-                    onFocus={(e) => e.target.select()}
-                  />
-                  {round && (
-                    <ol className="round-review">
-                      {round.attempts.map((attempt, i) => (
-                        <li
-                          key={i}
-                          className={
-                            attempt.correct ? 'review-correct' : 'review-wrong'
-                          }
-                        >
-                          <span>
-                            {attempt.correct ? '✓' : '↳'}{' '}
-                            {attempt.question.expression} ={' '}
-                            <b>{attempt.question.answer}</b>
-                          </span>
-                          <small>
-                            {attempt.correct
-                              ? 'Correct'
-                              : attempt.answer === null
-                                ? 'Skipped'
-                                : `You: ${attempt.answer}`}
-                            <span className="attempt-time">
-                              {(attempt.elapsedMs / 1000).toFixed(2)}s
+                  {reviewOpen && (
+                    <>
+                      <textarea
+                        aria-label="Shareable result text"
+                        readOnly
+                        value={shareText(result)}
+                        onFocus={(e) => e.target.select()}
+                      />
+                      {round && (
+                        <ol className="round-review">
+                          {round.attempts.map((attempt, i) => (
+                            <li
+                              key={i}
+                              className={
+                                attempt.correct
+                                  ? 'review-correct'
+                                  : 'review-wrong'
+                              }
+                            >
+                              <span>
+                                {attempt.correct ? '✓' : '↳'}{' '}
+                                {attempt.question.expression} ={' '}
+                                <b>{attempt.question.answer}</b>
+                              </span>
+                              <small>
+                                {attempt.correct
+                                  ? 'Correct'
+                                  : attempt.answer === null
+                                    ? 'Skipped'
+                                    : `You: ${attempt.answer}`}
+                                <span className="attempt-time">
+                                  {(attempt.elapsedMs / 1000).toFixed(2)}s
+                                </span>
+                              </small>
+                            </li>
+                          ))}
+                          <li className="review-timeout">
+                            <span>
+                              {round.question.expression} ={' '}
+                              <b>{round.question.answer}</b>
                             </span>
-                          </small>
-                        </li>
-                      ))}
-                      <li className="review-timeout">
-                        <span>
-                          {round.question.expression} ={' '}
-                          <b>{round.question.answer}</b>
-                        </span>
-                        <small>
-                          Time up
-                          <span className="attempt-time">
-                            {(
-                              Math.max(
-                                0,
-                                round.endsAt - round.questionStartedAt,
-                              ) / 1000
-                            ).toFixed(2)}
-                            s
-                          </span>
-                        </small>
-                      </li>
-                    </ol>
+                            <small>
+                              Time up
+                              <span className="attempt-time">
+                                {(
+                                  Math.max(
+                                    0,
+                                    round.endsAt - round.questionStartedAt,
+                                  ) / 1000
+                                ).toFixed(2)}
+                                s
+                              </span>
+                            </small>
+                          </li>
+                        </ol>
+                      )}
+                    </>
                   )}
                 </details>
               </div>
             )}
-            {(!isActive || round?.phase === 'countdown') && (
-              <div className="arena-footer">
-                <span>
-                  <Keyboard size={17} />
-                  Type your answer. Press Enter.
-                </span>
-                <span>
-                  <Check size={15} />
-                  No sign-up. Just you vs. you.
-                </span>
-              </div>
-            )}
+            <div className="arena-footer">
+              <span>
+                <Keyboard size={17} />
+                Type your answer. Press Enter.
+              </span>
+              <span>
+                <Check size={15} />
+                No sign-up. Just you vs. you.
+              </span>
+            </div>
           </section>
         </div>
         <div className="rules-strip">
@@ -1170,46 +1099,47 @@ export default function MathGame({ children }: { children: ReactNode }) {
             Personal bests stay on this device, separately for every difficulty,
             challenge, and duration.
           </DialogDescription>
-          {history.length === 0 ? (
-            <div className="empty-history">
-              <Trophy size={36} />
-              <h3>Your first record awaits.</h3>
-              <p>Play a round. Give your future self something to beat.</p>
-            </div>
-          ) : (
-            <>
-              <div className="history-heading">
-                <span>RECENT ROUNDS</span>
-                <span>
-                  {history.length === 50 ? 'Last 50' : 'On this device'}
-                </span>
+          {dialog === 'history' &&
+            (history.length === 0 ? (
+              <div className="empty-history">
+                <Trophy size={36} />
+                <h3>Your first record awaits.</h3>
+                <p>Play a round. Give your future self something to beat.</p>
               </div>
-              <div className="history-list">
-                {history.map((r) => (
-                  <div className="history-row" key={r.id}>
-                    <span>
-                      <strong>
-                        {getLevel(r.level).name} · {getMode(r.mode).name}
-                      </strong>
-                      <small>
-                        {r.duration}s ·{' '}
-                        {new Date(r.date).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                        })}{' '}
-                        · {accuracy(r)}% accuracy
-                      </small>
-                    </span>
-                    <b>
-                      {r.correct}
-                      <small>solved</small>
-                    </b>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-          {legacyHistory.length > 0 && (
+            ) : (
+              <>
+                <div className="history-heading">
+                  <span>RECENT ROUNDS</span>
+                  <span>
+                    {history.length === 50 ? 'Last 50' : 'On this device'}
+                  </span>
+                </div>
+                <div className="history-list">
+                  {history.map((r) => (
+                    <div className="history-row" key={r.id}>
+                      <span>
+                        <strong>
+                          {getLevel(r.level).name} · {getMode(r.mode).name}
+                        </strong>
+                        <small>
+                          {r.duration}s ·{' '}
+                          {new Date(r.date).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                          })}{' '}
+                          · {accuracy(r)}% accuracy
+                        </small>
+                      </span>
+                      <b>
+                        {r.correct}
+                        <small>solved</small>
+                      </b>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ))}
+          {dialog === 'history' && legacyHistory.length > 0 && (
             <section className="legacy-history">
               <div className="history-heading">
                 <span>EARLIER ROUNDS</span>

@@ -1578,42 +1578,6 @@ h1 span {
     gap: 16px;
   }
 }
-@media (max-height: 760px) and (max-width: 760px) {
-  .in-game .site-header {
-    height: 60px;
-  }
-  .in-game .main-shell {
-    margin-top: 12px;
-  }
-  .in-game .arena {
-    min-height: unset;
-  }
-  .active-arena .arena-topline {
-    padding-block: 15px;
-  }
-  .game-stats {
-    padding-top: 14px;
-  }
-  .live-equation {
-    margin-block: 10px;
-    min-height: 58px;
-  }
-  .question-label {
-    margin-top: 16px;
-  }
-  .game-actions {
-    margin-top: 4px;
-  }
-  .game-content {
-    padding-bottom: 9px;
-  }
-  .countdown-content {
-    min-height: 490px;
-  }
-  .in-game .site-footer {
-    margin: 15px auto;
-  }
-}
 
 .mobile-start {
   display: none;
@@ -1984,7 +1948,7 @@ body {
 .game-guide {
   margin-top: 58px;
 }
-.in-game .game-guide {
+.has-round .game-guide {
   display: none;
 }
 .guide-breadcrumb {
@@ -2259,5 +2223,212 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .skip-link {
     transition: none;
+  }
+}
+
+/* Stable geometry across setup, play, and results. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+.site-shell {
+  --page-width: 1130px;
+  --arena-gutter: clamp(16px, 2vw, 28px);
+  --answer-width: 390px;
+}
+.main-shell,
+.site-footer {
+  width: 100%;
+  max-width: var(--page-width);
+}
+.workspace {
+  width: 100%;
+  min-width: 0;
+}
+.arena,
+.in-game .arena {
+  width: 100%;
+  min-width: 0;
+  min-height: 48rem;
+  container-type: inline-size;
+}
+.ready-content,
+.countdown-content,
+.game-content,
+.result-content,
+.has-round .result-content {
+  width: 100%;
+  min-width: 0;
+  padding-inline: var(--arena-gutter);
+  animation: screen-enter 160ms ease-out;
+}
+.arena-topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 98px;
+  padding-inline: var(--arena-gutter);
+}
+.arena-topline > span:first-child {
+  line-height: 1.5;
+}
+.arena-topline i {
+  flex-shrink: 0;
+}
+.mode-badge {
+  text-align: right;
+  justify-self: end;
+  line-height: 1.5;
+}
+.best-pill {
+  flex: 0 0 245px;
+}
+.install-slot {
+  display: inline-flex;
+  width: 100px;
+  min-height: 44px;
+}
+.connection-status {
+  min-width: 205px;
+  min-height: 24px;
+}
+.setting-note {
+  min-height: 3.2em;
+}
+.ready-content .preview-equation {
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ready-content .preview-equation.operands-3 {
+  font-size: clamp(24px, 6.5cqi, 46px);
+}
+.ready-content .preview-equation.operands-4 {
+  font-size: clamp(20px, 5.5cqi, 38px);
+}
+.game-content .live-equation {
+  margin: 18px 0 14px;
+  min-height: 7rem;
+  font-size: clamp(24px, 9cqi, 50px);
+}
+.game-content .live-equation.operands-3 {
+  font-size: clamp(24px, 6.5cqi, 36px);
+}
+.game-content .live-equation.operands-4 {
+  font-size: clamp(20px, 5.5cqi, 30px);
+}
+.answer-form,
+.game-actions,
+.result-stats,
+.result-actions,
+.target-comparison,
+.result-details,
+.change-challenge-button {
+  max-width: var(--answer-width);
+}
+.answer-feedback {
+  min-height: calc(3 * 1.4em + 12px);
+  overflow-wrap: anywhere;
+}
+.answer-feedback > svg {
+  flex-shrink: 0;
+}
+.question-time strong {
+  width: 6ch;
+  text-align: right;
+}
+.game-stats {
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+}
+.game-stats strong,
+.result-stats strong,
+.result-score strong,
+.best-pill strong,
+.target-card strong,
+.question-label {
+  font-variant-numeric: tabular-nums;
+}
+.game-stats small {
+  display: block;
+  margin-top: 5px;
+}
+.question-label {
+  min-height: 1.5em;
+  margin-top: 16px;
+  align-items: start;
+  line-height: 1.5;
+}
+.question-label > span {
+  text-align: right;
+}
+.round-review li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.result-score {
+  max-width: 100%;
+}
+.result-score > strong {
+  font-size: clamp(44px, 13cqi, 76px);
+  letter-spacing: -0.04em;
+}
+.question-time {
+  margin-bottom: 12px;
+}
+.game-content {
+  padding-bottom: 20px;
+}
+.target-card {
+  width: 100%;
+  max-width: var(--answer-width);
+  min-height: 74px;
+}
+.timer-progress {
+  contain: layout paint;
+}
+.timer-progress [data-slot='progress-indicator'] {
+  transform-origin: left center;
+  transition:
+    transform 100ms linear,
+    background-color 160ms ease;
+}
+.duration-option,
+.level-card,
+.maker-card,
+.related-tool-card {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+.answer-form {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.share-links button {
+  min-width: 95px;
+  justify-content: center;
+}
+@keyframes screen-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 760px) {
+  .install-slot {
+    width: 35px;
+  }
+  .site-footer .connection-status {
+    justify-content: center;
+  }
+}
+@media (max-width: 440px) {
+  .site-header .lowkey-link {
+    display: none;
   }
 }

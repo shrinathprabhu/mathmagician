@@ -1,31 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Check, Clock3, Flame } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Progress as ProgressPrimitive } from '@base-ui/react/progress';
+import { ProgressTrack, ProgressIndicator } from '@/components/ui/progress';
 import type { Round } from '@/lib/game';
 
 // Only these small displays repaint as time passes. The game engine schedules
 // deadlines independently and rechecks them on every submission.
-function useClock(readNow: () => number) {
+function useClock(readNow: () => number, precision = 100, origin = 0) {
   const [now, setNow] = useState(readNow);
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-    const refresh = () => setNow(readNow());
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      const current = readNow();
+      setNow(current);
+      const elapsed =
+        (((current - origin) % precision) + precision) % precision;
+      timeout = setTimeout(refresh, Math.max(1, precision - elapsed));
+    };
     const visibility = () => {
-      clearInterval(interval);
+      clearTimeout(timeout);
       if (!document.hidden) {
         refresh();
-        interval = setInterval(refresh, 100);
       }
     };
     visibility();
     document.addEventListener('visibilitychange', visibility);
     return () => {
-      clearInterval(interval);
+      clearTimeout(timeout);
       document.removeEventListener('visibilitychange', visibility);
     };
-  }, [readNow]);
+  }, [readNow, precision, origin]);
   return now;
 }
 
@@ -36,7 +42,7 @@ export function CountdownClock({
   startsAt: number;
   readNow: () => number;
 }) {
-  const now = useClock(readNow);
+  const now = useClock(readNow, 1000, startsAt);
   const count = Math.max(1, Math.ceil((startsAt - now) / 1000));
   return (
     <output className="countdown-number" key={count} aria-live="assertive">
@@ -45,7 +51,7 @@ export function CountdownClock({
   );
 }
 
-export function RoundClock({
+export const RoundClock = memo(function RoundClock({
   round,
   readNow,
 }: {
@@ -54,6 +60,10 @@ export function RoundClock({
 }) {
   const now = useClock(readNow);
   const seconds = Math.max(0, Math.ceil((round.endsAt - now) / 1000));
+  const progress = Math.max(
+    0,
+    Math.min(1, (round.endsAt - now) / (round.config.duration * 1000)),
+  );
   return (
     <>
       <div className="game-stats">
@@ -85,19 +95,22 @@ export function RoundClock({
           </strong>
         </div>
       </div>
-      <Progress
-        value={Math.max(
-          0,
-          Math.min(100, (round.endsAt - now) / (round.config.duration * 10)),
-        )}
+      <ProgressPrimitive.Root
+        value={Math.ceil(progress * 100)}
         aria-label="Round time remaining"
         className={seconds <= 5 ? 'timer-progress urgent' : 'timer-progress'}
-      />
+      >
+        <ProgressTrack>
+          <ProgressIndicator
+            style={{ width: '100%', transform: `scaleX(${progress})` }}
+          />
+        </ProgressTrack>
+      </ProgressPrimitive.Root>
     </>
   );
-}
+});
 
-export function QuestionClock({
+export const QuestionClock = memo(function QuestionClock({
   startedAt,
   endsAt,
   readNow,
@@ -116,4 +129,4 @@ export function QuestionClock({
       </strong>
     </div>
   );
-}
+});
